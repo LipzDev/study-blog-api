@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('posts')
 export class Post {
@@ -8,8 +17,12 @@ export class Post {
   @Column({ unique: true })
   slug: string;
 
+  @ManyToOne(() => User, (user) => user.posts, { eager: true })
+  @JoinColumn({ name: 'authorId' })
+  author: User;
+
   @Column()
-  author: string;
+  authorId: string;
 
   @Column()
   title: string;

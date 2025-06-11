@@ -13,7 +13,9 @@ export class PostsService {
   ) {}
 
   async create(createPostDto: CreatePostDto): Promise<Post> {
-    const post = this.postRepository.create(createPostDto);
+    const post = this.postRepository.create({
+      ...createPostDto,
+    });
     return await this.postRepository.save(post);
   }
 
@@ -30,7 +32,10 @@ export class PostsService {
     });
   }
 
-  async findPaginated(page: number = 1, limit: number = 12): Promise<{ posts: Post[]; total: number }> {
+  async findPaginated(
+    page: number = 1,
+    limit: number = 12,
+  ): Promise<{ posts: Post[]; total: number }> {
     const [posts, total] = await this.postRepository.findAndCount({
       order: { date: 'DESC' },
       skip: (page - 1) * limit,

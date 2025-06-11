@@ -1,13 +1,19 @@
-import { IsString, IsNotEmpty, IsOptional, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsUrl,
+  IsUUID,
+} from 'class-validator';
 
 export class CreatePostDto {
   @IsString()
   @IsNotEmpty()
   slug: string;
 
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
-  author: string;
+  authorId: string;
 
   @IsString()
   @IsNotEmpty()

@@ -4,6 +4,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RecadosModule } from 'src/recados/recados.module';
 import { PostsModule } from 'src/posts/posts.module';
+import { AuthModule } from 'src/auth/auth.module';
+import { UsersModule } from 'src/users/users.module';
+import { MailModule } from 'src/mail/mail.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
@@ -24,6 +27,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     }),
     RecadosModule,
     PostsModule,
+    AuthModule,
+    UsersModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
