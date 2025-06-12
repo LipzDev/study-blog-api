@@ -55,9 +55,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Google OAuth callback' })
   async googleAuthRedirect(@Request() req, @Res() res: Response) {
     const result = await this.authService.googleLogin(req.user);
-    
+
     // Redirect to frontend with token
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     res.redirect(`${frontendUrl}/auth/callback?token=${result.access_token}`);
   }
 
@@ -82,6 +82,25 @@ export class AuthController {
   @ApiResponse({ status: 404, description: 'Invalid verification token' })
   async verifyEmail(@Query('token') token: string) {
     return this.authService.verifyEmail(token);
+  }
+
+  @Post('resend-verification')
+  @ApiOperation({ summary: 'Resend email verification' })
+  @ApiBody({ type: ForgotPasswordDto }) // Reutilizar DTO que só tem email
+  @ApiResponse({
+    status: 200,
+    description: 'Verification email sent if account exists',
+  })
+  async resendVerification(@Body() body: { email: string }) {
+    return this.authService.resendVerification(body.email);
+  }
+
+  @Post('check-verification-status')
+  @ApiOperation({ summary: 'Check email verification status' })
+  @ApiBody({ type: ForgotPasswordDto }) // Reutilizar DTO que só tem email
+  @ApiResponse({ status: 200, description: 'Verification status checked' })
+  async checkVerificationStatus(@Body() body: { email: string }) {
+    return this.authService.checkVerificationStatus(body.email);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -119,4 +119,14 @@ export class UsersService {
       emailVerificationToken: undefined,
     });
   }
+
+  async generateEmailVerificationToken(userId: string): Promise<string> {
+    const token = crypto.randomBytes(32).toString('hex');
+
+    await this.userRepository.update(userId, {
+      emailVerificationToken: token,
+    });
+
+    return token;
+  }
 }
