@@ -4,7 +4,7 @@ import { UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
-import { User, UserProvider } from '../users/entities/user.entity';
+import { User, UserProvider, UserRole } from '../users/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -23,6 +23,7 @@ describe('AuthService', () => {
     providerId: undefined,
     avatar: undefined,
     emailVerified: false,
+    role: UserRole.USER,
     emailVerificationToken: 'verification-token',
     resetPasswordToken: undefined,
     resetPasswordExpires: undefined,
@@ -92,10 +93,8 @@ describe('AuthService', () => {
       };
 
       const createdUser = { ...mockUser };
-      const token = 'jwt-token';
 
       mockUsersService.create.mockResolvedValue(createdUser);
-      mockJwtService.sign.mockReturnValue(token);
       mockMailService.sendEmailVerification.mockResolvedValue(undefined);
 
       const result = await service.register(registerDto);
@@ -108,21 +107,11 @@ describe('AuthService', () => {
         createdUser.email,
         createdUser.emailVerificationToken,
       );
-      expect(jwtService.sign).toHaveBeenCalledWith({
-        email: createdUser.email,
-        sub: createdUser.id,
-      });
+
       expect(result).toEqual({
-        user: expect.objectContaining({
-          id: createdUser.id,
-          email: createdUser.email,
-          name: createdUser.name,
-        }),
-        access_token: token,
+        message: expect.stringContaining('Conta criada com sucesso'),
+        email: createdUser.email,
       });
-      expect(result.user).not.toHaveProperty('password');
-      expect(result.user).not.toHaveProperty('resetPasswordToken');
-      expect(result.user).not.toHaveProperty('emailVerificationToken');
     });
   });
 
@@ -294,7 +283,7 @@ describe('AuthService', () => {
         resetToken,
       );
       expect(result.message).toBe(
-        'If the email exists, a reset link has been sent',
+        'Se o email existir, um link de redefinição foi enviado',
       );
     });
 
@@ -306,7 +295,7 @@ describe('AuthService', () => {
       const result = await service.forgotPassword(forgotPasswordDto);
 
       expect(result.message).toBe(
-        'If the email exists, a reset link has been sent',
+        'Se o email existir, um link de redefinição foi enviado',
       );
       expect(usersService.updateResetPasswordToken).not.toHaveBeenCalled();
       expect(mailService.sendPasswordResetEmail).not.toHaveBeenCalled();
@@ -328,7 +317,7 @@ describe('AuthService', () => {
         resetPasswordDto.token,
         resetPasswordDto.password,
       );
-      expect(result.message).toBe('Password has been reset successfully');
+      expect(result.message).toBe('Senha foi redefinida com sucesso');
     });
   });
 
@@ -341,7 +330,7 @@ describe('AuthService', () => {
       const result = await service.verifyEmail(token);
 
       expect(usersService.verifyEmail).toHaveBeenCalledWith(token);
-      expect(result.message).toBe('Email verified successfully');
+      expect(result.message).toBe('Email verificado com sucesso');
     });
   });
 });

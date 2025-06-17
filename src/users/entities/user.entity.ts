@@ -1,10 +1,22 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Post } from '../../posts/entities/post.entity';
 
 export enum UserProvider {
   LOCAL = 'local',
   GOOGLE = 'google',
+}
+
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
 }
 
 @Entity('users')
@@ -37,6 +49,20 @@ export class User {
 
   @Column({ default: false })
   emailVerified: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER,
+  })
+  role: UserRole;
+
+  @Column({
+    type: 'boolean',
+    default: false,
+    name: 'is_super_admin',
+  })
+  isSuperAdmin: boolean;
 
   @Column({ nullable: true })
   @Exclude()

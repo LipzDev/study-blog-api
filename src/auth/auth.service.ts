@@ -53,7 +53,7 @@ export class AuthService {
 
     return {
       message:
-        'Account created successfully. Please check your email to verify your account before logging in.',
+        'Conta criada com sucesso. Verifique seu email para ativar sua conta antes de fazer login.',
       email: user.email,
     };
   }
@@ -61,13 +61,13 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<AuthResponse> {
     const user = await this.validateUser(loginDto.email, loginDto.password);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     // Verificar se o email foi confirmado (apenas para usuários locais)
     if (user.provider === UserProvider.LOCAL && !user.emailVerified) {
       throw new UnauthorizedException(
-        'Please verify your email before logging in. Check your inbox for the verification link.',
+        'Verifique seu email antes de fazer login. Verifique sua caixa de entrada para o link de verificação.',
       );
     }
 
@@ -105,7 +105,7 @@ export class AuthService {
       // Verificar se já existe um usuário com este email
       user = await this.usersService.findByEmail(googleUser.email);
       if (user) {
-        throw new BadRequestException('User with this email already exists');
+        throw new BadRequestException('Usuário com este email já existe');
       }
 
       // Criar novo usuário
@@ -142,7 +142,9 @@ export class AuthService {
     const user = await this.usersService.findByEmail(forgotPasswordDto.email);
     if (!user) {
       // Por segurança, não revelamos se o email existe ou não
-      return { message: 'If the email exists, a reset link has been sent' };
+      return {
+        message: 'Se o email existir, um link de redefinição foi enviado',
+      };
     }
 
     const resetToken = await this.usersService.updateResetPasswordToken(
@@ -150,7 +152,9 @@ export class AuthService {
     );
     await this.mailService.sendPasswordResetEmail(user.email, resetToken);
 
-    return { message: 'If the email exists, a reset link has been sent' };
+    return {
+      message: 'Se o email existir, um link de redefinição foi enviado',
+    };
   }
 
   async resetPassword(
@@ -160,12 +164,12 @@ export class AuthService {
       resetPasswordDto.token,
       resetPasswordDto.password,
     );
-    return { message: 'Password has been reset successfully' };
+    return { message: 'Senha foi redefinida com sucesso' };
   }
 
   async verifyEmail(token: string): Promise<{ message: string }> {
     await this.usersService.verifyEmail(token);
-    return { message: 'Email verified successfully' };
+    return { message: 'Email verificado com sucesso' };
   }
 
   async resendVerification(email: string): Promise<{ message: string }> {
@@ -175,12 +179,12 @@ export class AuthService {
       // Por segurança, não revelamos se o email existe ou não
       return {
         message:
-          'If the email exists and is not verified, a verification link has been sent',
+          'Se o email existir e não estiver verificado, um link de verificação foi enviado',
       };
     }
 
     if (user.emailVerified) {
-      return { message: 'Email is already verified' };
+      return { message: 'Email já está verificado' };
     }
 
     // Gerar novo token de verificação se necessário
@@ -203,7 +207,7 @@ export class AuthService {
 
     return {
       message:
-        'If the email exists and is not verified, a verification link has been sent',
+        'Se o email existir e não estiver verificado, um link de verificação foi enviado',
     };
   }
 
@@ -215,15 +219,15 @@ export class AuthService {
     if (!user) {
       return {
         verified: false,
-        message: 'User not found',
+        message: 'Usuário não encontrado',
       };
     }
 
     return {
       verified: user.emailVerified,
       message: user.emailVerified
-        ? 'Email is verified'
-        : 'Email is not verified yet',
+        ? 'Email está verificado'
+        : 'Email ainda não foi verificado',
     };
   }
 }

@@ -2,10 +2,14 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  Logger,
+  ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User, UserProvider } from './entities/user.entity';
+import { Repository, LessThan } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { User, UserProvider, UserRole } from './entities/user.entity';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
@@ -17,10 +21,13 @@ export interface CreateUserData {
   providerId?: string;
   avatar?: string;
   emailVerified?: boolean;
+  role?: UserRole;
 }
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -29,7 +36,7 @@ export class UsersService {
   async create(userData: CreateUserData): Promise<User> {
     const existingUser = await this.findByEmail(userData.email);
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw new ConflictException('Usuário com este email já existe');
     }
 
     const user = this.userRepository.create({
@@ -93,7 +100,7 @@ export class UsersService {
       !user.resetPasswordExpires ||
       user.resetPasswordExpires < new Date()
     ) {
-      throw new NotFoundException('Invalid or expired reset token');
+      throw new NotFoundException('Token de redefinição inválido ou expirado');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -111,7 +118,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('Invalid verification token');
+      throw new NotFoundException('Token de verificação inválido');
     }
 
     await this.userRepository.update(user.id, {
@@ -128,5 +135,258 @@ export class UsersService {
     });
 
     return token;
+  }
+
+  /**
+   * Cron job que executa a cada hora para limpar usuários não verificados
+   * Remove usuários que foram criados há mais de 24 horas e ainda não verificaram o email
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  async cleanupUnverifiedUsers(): Promise<void> {
+    try {
+      // Calcula a data de 24 horas atrás
+      const twentyFourHoursAgo = new Date();
+      twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+      // Busca usuários não verificados criados há mais de 24 horas
+      const unverifiedUsers = await this.userRepository.find({
+        where: {
+          emailVerified: false,
+          provider: UserProvider.LOCAL, // Só remove usuários locais, não do Google
+          createdAt: LessThan(twentyFourHoursAgo),
+        },
+      });
+
+      if (unverifiedUsers.length > 0) {
+        // Remove os usuários não verificados
+        await this.userRepository.remove(unverifiedUsers);
+
+        this.logger.log(
+          `Cleanup completed: Removed ${unverifiedUsers.length} unverified users older than 24 hours`,
+        );
+
+        // Log dos emails removidos (para auditoria)
+        const removedEmails = unverifiedUsers.map((user) => user.email);
+        this.logger.debug(`Removed emails: ${removedEmails.join(', ')}`);
+      } else {
+        this.logger.debug(
+          'Cleanup completed: No unverified users found to remove',
+        );
+      }
+    } catch (error) {
+      this.logger.error('Error during unverified users cleanup:', error);
+    }
+  }
+
+  /**
+   * Método manual para executar a limpeza (útil para testes ou execução manual)
+   */
+  async manualCleanupUnverifiedUsers(): Promise<{
+    removed: number;
+    emails: string[];
+  }> {
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    const unverifiedUsers = await this.userRepository.find({
+      where: {
+        emailVerified: false,
+        provider: UserProvider.LOCAL,
+        createdAt: LessThan(twentyFourHoursAgo),
+      },
+    });
+
+    const removedEmails = unverifiedUsers.map((user) => user.email);
+
+    if (unverifiedUsers.length > 0) {
+      await this.userRepository.remove(unverifiedUsers);
+    }
+
+    return {
+      removed: unverifiedUsers.length,
+      emails: removedEmails,
+    };
+  }
+
+  /**
+   * Lista todos os usuários (sem incluir dados sensíveis) - para admins
+   */
+  async findAllUsers(): Promise<
+    Omit<
+      User,
+      | 'password'
+      | 'emailVerificationToken'
+      | 'resetPasswordToken'
+      | 'resetPasswordExpires'
+    >[]
+  > {
+    const users = await this.userRepository.find({
+      select: [
+        'id',
+        'name',
+        'email',
+        'role',
+        'emailVerified',
+        'provider',
+        'avatar',
+        'isSuperAdmin',
+        'createdAt',
+        'updatedAt',
+      ],
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return users;
+  }
+
+  /**
+   * Busca um usuário pelo email (sem incluir dados sensíveis) - para admins
+   */
+  async findByEmailForAdmin(
+    email: string,
+  ): Promise<
+    Omit<
+      User,
+      | 'password'
+      | 'emailVerificationToken'
+      | 'resetPasswordToken'
+      | 'resetPasswordExpires'
+    >
+  > {
+    const user = await this.userRepository.findOne({
+      where: { email },
+      select: [
+        'id',
+        'name',
+        'email',
+        'role',
+        'emailVerified',
+        'provider',
+        'avatar',
+        'createdAt',
+        'updatedAt',
+      ],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Usuário com email ${email} não encontrado`);
+    }
+
+    return user;
+  }
+
+  /**
+   * Verifica se um usuário pode modificar outro baseado na hierarquia
+   */
+  private canModifyUser(requester: User, target: User): boolean {
+    // Apenas super admin pode promover usuários a admin
+    if (requester.isSuperAdmin && !target.isSuperAdmin) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Promove um usuário ao cargo de administrador
+   */
+  async promoteToAdmin(
+    userId: string,
+    requester: User,
+  ): Promise<{ message: string; user: Partial<User> }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'name', 'email', 'role', 'isSuperAdmin'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Usuário com ID ${userId} não encontrado`);
+    }
+
+    if (user.role === UserRole.ADMIN) {
+      throw new ConflictException('Usuário já possui cargo de administrador');
+    }
+
+    // Verificar se o solicitante pode promover este usuário
+    if (!this.canModifyUser(requester, user)) {
+      throw new ForbiddenException(
+        'Você não tem permissão para promover este usuário',
+      );
+    }
+
+    // Atualizar o role para admin
+    await this.userRepository.update(userId, { role: UserRole.ADMIN });
+
+    // Buscar o usuário atualizado
+    const updatedUser = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'name', 'email', 'role', 'isSuperAdmin'],
+    });
+
+    // Log da ação
+    this.logger.log(
+      `User ${requester.email} promoted user ${user.email} to admin`,
+    );
+
+    return {
+      message: 'Usuário promovido a administrador com sucesso',
+      user: updatedUser!,
+    };
+  }
+
+  /**
+   * Remove o cargo de administrador de um usuário (apenas super admin)
+   */
+  async revokeAdmin(
+    userId: string,
+    requester: User,
+  ): Promise<{ message: string; user: Partial<User> }> {
+    // Apenas super admin pode revogar admin
+    if (!requester.isSuperAdmin) {
+      throw new ForbiddenException(
+        'Apenas super administradores podem revogar privilégios de admin',
+      );
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'name', 'email', 'role', 'isSuperAdmin'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Usuário com ID ${userId} não encontrado`);
+    }
+
+    if (user.role !== UserRole.ADMIN) {
+      throw new BadRequestException('Usuário não é administrador');
+    }
+
+    // Não pode revogar super admin
+    if (user.isSuperAdmin) {
+      throw new ForbiddenException(
+        'Não é possível revogar privilégios de super administrador',
+      );
+    }
+
+    // Atualizar o role para user
+    await this.userRepository.update(userId, { role: UserRole.USER });
+
+    // Buscar o usuário atualizado
+    const updatedUser = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'name', 'email', 'role', 'isSuperAdmin'],
+    });
+
+    // Log da ação
+    this.logger.log(
+      `Super admin ${requester.email} revoked admin privileges from user ${user.email}`,
+    );
+
+    return {
+      message: 'Privilégios de administrador removidos com sucesso',
+      user: updatedUser!,
+    };
   }
 }

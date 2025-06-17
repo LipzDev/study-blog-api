@@ -1,14 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UserProvider, UserRole } from '../users/entities/user.entity';
 
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: AuthService;
+  let registerSpy: jest.SpyInstance;
+  let loginSpy: jest.SpyInstance;
+  let forgotPasswordSpy: jest.SpyInstance;
+  let resetPasswordSpy: jest.SpyInstance;
+  let verifyEmailSpy: jest.SpyInstance;
 
   const mockAuthService = {
     register: jest.fn(),
@@ -19,6 +26,10 @@ describe('AuthController', () => {
     googleLogin: jest.fn(),
   };
 
+  const mockUsersService = {
+    manualCleanupUnverifiedUsers: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -27,11 +38,22 @@ describe('AuthController', () => {
           provide: AuthService,
           useValue: mockAuthService,
         },
+        {
+          provide: UsersService,
+          useValue: mockUsersService,
+        },
       ],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
+
+    // Initialize spies
+    registerSpy = jest.spyOn(authService, 'register');
+    loginSpy = jest.spyOn(authService, 'login');
+    forgotPasswordSpy = jest.spyOn(authService, 'forgotPassword');
+    resetPasswordSpy = jest.spyOn(authService, 'resetPassword');
+    verifyEmailSpy = jest.spyOn(authService, 'verifyEmail');
   });
 
   afterEach(() => {
@@ -67,7 +89,7 @@ describe('AuthController', () => {
 
       const result = await controller.register(registerDto);
 
-      expect(authService.register).toHaveBeenCalledWith(registerDto);
+      expect(registerSpy).toHaveBeenCalledWith(registerDto);
       expect(result).toEqual(expectedResult);
     });
 
@@ -101,9 +123,11 @@ describe('AuthController', () => {
           name: 'John Doe',
           email: 'john@example.com',
           emailVerified: true,
-          provider: 'local',
+          provider: UserProvider.LOCAL,
+          role: UserRole.USER,
           createdAt: new Date(),
           updatedAt: new Date(),
+          posts: [],
         },
         access_token: 'jwt-token',
       };
@@ -117,7 +141,7 @@ describe('AuthController', () => {
 
       const result = await controller.login(mockRequest);
 
-      expect(authService.login).toHaveBeenCalledWith(loginDto);
+      expect(loginSpy).toHaveBeenCalledWith(loginDto);
       expect(result).toEqual(expectedResult);
     });
   });
@@ -136,7 +160,7 @@ describe('AuthController', () => {
 
       const result = await controller.forgotPassword(forgotPasswordDto);
 
-      expect(authService.forgotPassword).toHaveBeenCalledWith(forgotPasswordDto);
+      expect(forgotPasswordSpy).toHaveBeenCalledWith(forgotPasswordDto);
       expect(result).toEqual(expectedResult);
     });
   });
@@ -156,7 +180,7 @@ describe('AuthController', () => {
 
       const result = await controller.resetPassword(resetPasswordDto);
 
-      expect(authService.resetPassword).toHaveBeenCalledWith(resetPasswordDto);
+      expect(resetPasswordSpy).toHaveBeenCalledWith(resetPasswordDto);
       expect(result).toEqual(expectedResult);
     });
 
@@ -187,7 +211,7 @@ describe('AuthController', () => {
 
       const result = await controller.verifyEmail(token);
 
-      expect(authService.verifyEmail).toHaveBeenCalledWith(token);
+      expect(verifyEmailSpy).toHaveBeenCalledWith(token);
       expect(result).toEqual(expectedResult);
     });
 
@@ -211,14 +235,16 @@ describe('AuthController', () => {
         name: 'John Doe',
         email: 'john@example.com',
         emailVerified: true,
-        provider: 'local',
+        provider: UserProvider.LOCAL,
+        role: UserRole.USER,
         createdAt: new Date(),
         updatedAt: new Date(),
+        posts: [],
       };
 
       const mockRequest = {
         user: mockUser,
-      };
+      } as any;
 
       const result = controller.getProfile(mockRequest);
 

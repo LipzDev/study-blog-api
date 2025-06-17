@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RecadosModule } from 'src/recados/recados.module';
@@ -7,6 +8,7 @@ import { PostsModule } from 'src/posts/posts.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { UsersModule } from 'src/users/users.module';
 import { MailModule } from 'src/mail/mail.module';
+import { UploadsModule } from 'src/uploads/uploads.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
@@ -15,6 +17,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       envFilePath: ['.env'],
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -30,6 +33,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     AuthModule,
     UsersModule,
     MailModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

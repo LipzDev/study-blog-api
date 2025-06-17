@@ -3,10 +3,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class ForgotPasswordDto {
   @ApiProperty({
-    description: 'User email address',
-    example: 'user@example.com',
+    description: 'Endereço de email do usuário',
+    example: 'usuario@exemplo.com',
   })
-  @IsEmail({}, { message: 'Please provide a valid email address' })
+  @IsEmail({}, { message: 'Forneça um endereço de email válido' })
   @IsNotEmpty()
   email: string;
 }
