@@ -215,12 +215,12 @@ export class PostsService {
 
   /**
    * Verifica se o usuário pode excluir a postagem
-   * - Super admins e admins podem excluir qualquer postagem
+   * - SUPER_ADMIN e ADMIN podem excluir qualquer postagem
    * - Usuários comuns só podem excluir suas próprias postagens
    */
   private canUserDeletePost(user: User, post: Post): boolean {
-    // Super admin e admin podem excluir qualquer postagem
-    if (user.role === UserRole.ADMIN || user.isSuperAdmin) {
+    // SUPER_ADMIN e ADMIN podem excluir qualquer postagem
+    if (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN) {
       return true;
     }
 

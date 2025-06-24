@@ -17,6 +17,7 @@ export enum UserProvider {
 export enum UserRole {
   USER = 'user',
   ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin',
 }
 
 @Entity('users')
@@ -56,13 +57,6 @@ export class User {
     default: UserRole.USER,
   })
   role: UserRole;
-
-  @Column({
-    type: 'boolean',
-    default: false,
-    name: 'is_super_admin',
-  })
-  isSuperAdmin: boolean;
 
   @Column({ nullable: true })
   @Exclude()

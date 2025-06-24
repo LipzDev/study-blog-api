@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { RecadosModule } from 'src/recados/recados.module';
 import { PostsModule } from 'src/posts/posts.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { UsersModule } from 'src/users/users.module';
@@ -28,7 +27,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       autoLoadEntities: true,
       synchronize: process.env.NODE_ENV !== 'production',
     }),
-    RecadosModule,
     PostsModule,
     AuthModule,
     UsersModule,

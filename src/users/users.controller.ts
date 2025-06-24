@@ -21,6 +21,8 @@ import {
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from './entities/user.entity';
 
 @ApiTags('Users')
@@ -28,13 +30,14 @@ import { UserRole } from './entities/user.entity';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Get()
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Listar todos os usuários',
     description:
-      'Lista todos os usuários do sistema com informações básicas. Apenas admins podem usar esta funcionalidade.',
+      'Lista todos os usuários do sistema com informações básicas. Apenas ADMIN e SUPER_ADMIN podem usar esta funcionalidade.',
   })
   @ApiResponse({
     status: 200,
@@ -50,7 +53,7 @@ export class UsersController {
           },
           name: { type: 'string', example: 'João Silva' },
           email: { type: 'string', example: 'joao@exemplo.com' },
-          role: { type: 'string', enum: ['user', 'admin'], example: 'user' },
+          role: { type: 'string', enum: ['user', 'admin', 'super_admin'], example: 'user' },
           emailVerified: { type: 'boolean', example: true },
           provider: {
             type: 'string',
@@ -69,26 +72,20 @@ export class UsersController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Acesso negado - Apenas admins podem listar usuários',
+    description: 'Acesso negado - Apenas ADMIN e SUPER_ADMIN podem listar usuários',
   })
-  async getAllUsers(@Request() req) {
-    // Verificar se o usuário é admin
-    if (req.user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException(
-        'Apenas administradores podem listar usuários',
-      );
-    }
-
+  async getAllUsers() {
     return this.usersService.findAllUsers();
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Get('search')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Buscar usuário por email',
     description:
-      'Busca um usuário pelo email. Apenas admins podem usar esta funcionalidade.',
+      'Busca um usuário pelo email. Apenas ADMIN e SUPER_ADMIN podem usar esta funcionalidade.',
   })
   @ApiQuery({
     name: 'email',
@@ -106,7 +103,7 @@ export class UsersController {
         id: { type: 'string', example: '123e4567-e89b-12d3-a456-426614174000' },
         name: { type: 'string', example: 'João Silva' },
         email: { type: 'string', example: 'joao@exemplo.com' },
-        role: { type: 'string', enum: ['user', 'admin'], example: 'user' },
+        role: { type: 'string', enum: ['user', 'admin', 'super_admin'], example: 'user' },
         emailVerified: { type: 'boolean', example: true },
         provider: {
           type: 'string',
@@ -124,7 +121,7 @@ export class UsersController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Acesso negado - Apenas admins podem buscar usuários',
+    description: 'Acesso negado - Apenas ADMIN e SUPER_ADMIN podem buscar usuários',
   })
   @ApiResponse({
     status: 404,
@@ -141,24 +138,18 @@ export class UsersController {
       },
     },
   })
-  async searchUserByEmail(@Query('email') email: string, @Request() req) {
-    // Verificar se o usuário é admin
-    if (req.user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException(
-        'Apenas administradores podem buscar usuários',
-      );
-    }
-
+  async searchUserByEmail(@Query('email') email: string) {
     return this.usersService.findByEmailForAdmin(email);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
   @Patch(':id/promote-admin')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Promover usuário a administrador',
     description:
-      'Promove um usuário comum ao cargo de administrador. Apenas super admins podem usar esta funcionalidade.',
+      'Promove um usuário comum ao cargo de administrador. Apenas SUPER_ADMIN pode usar esta funcionalidade.',
   })
   @ApiParam({
     name: 'id',
@@ -193,49 +184,32 @@ export class UsersController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Acesso negado - Apenas super admins podem promover usuários',
+    description: 'Acesso negado - Apenas SUPER_ADMIN pode promover usuários',
   })
   @ApiResponse({
     status: 404,
     description: 'Usuário não encontrado',
   })
   @ApiResponse({
-    status: 400,
+    status: 409,
     description: 'Usuário já é administrador',
-    schema: {
-      type: 'object',
-      properties: {
-        message: {
-          type: 'string',
-          example: 'Usuário já possui cargo de administrador',
-        },
-        error: { type: 'string', example: 'Bad Request' },
-        statusCode: { type: 'number', example: 400 },
-      },
-    },
   })
   async promoteToAdmin(@Param('id') id: string, @Request() req) {
-    // Verificar se o usuário é super admin
-    if (!req.user.isSuperAdmin) {
-      throw new ForbiddenException(
-        'Apenas super administradores podem promover usuários a admin',
-      );
-    }
-
     return this.usersService.promoteToAdmin(id, req.user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
   @Patch(':id/revoke-admin')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Revogar privilégios de administrador',
     description:
-      'Remove o cargo de administrador de um usuário. Apenas super admins podem usar esta funcionalidade.',
+      'Remove o cargo de administrador de um usuário. Apenas SUPER_ADMIN pode usar esta funcionalidade.',
   })
   @ApiParam({
     name: 'id',
-    description: 'ID do usuário que terá os privilégios revogados',
+    description: 'ID do usuário a ter privilégios revogados',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiResponse({
@@ -266,8 +240,7 @@ export class UsersController {
   })
   @ApiResponse({
     status: 403,
-    description:
-      'Acesso negado - Apenas super admins podem revogar privilégios',
+    description: 'Acesso negado - Apenas SUPER_ADMIN pode revogar privilégios',
   })
   @ApiResponse({
     status: 404,
@@ -275,16 +248,9 @@ export class UsersController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Usuário não é administrador ou é super admin',
+    description: 'Usuário não é administrador',
   })
   async revokeAdmin(@Param('id') id: string, @Request() req) {
-    // Verificar se o usuário é super admin
-    if (!req.user.isSuperAdmin) {
-      throw new ForbiddenException(
-        'Apenas super administradores podem revogar privilégios',
-      );
-    }
-
     return this.usersService.revokeAdmin(id, req.user);
   }
 }

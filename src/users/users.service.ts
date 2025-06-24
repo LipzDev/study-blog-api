@@ -129,57 +129,42 @@ export class UsersService {
 
   async generateEmailVerificationToken(userId: string): Promise<string> {
     const token = crypto.randomBytes(32).toString('hex');
-
     await this.userRepository.update(userId, {
       emailVerificationToken: token,
     });
-
     return token;
   }
 
   /**
-   * Cron job que executa a cada hora para limpar usuários não verificados
-   * Remove usuários que foram criados há mais de 24 horas e ainda não verificaram o email
+   * Limpa usuários não verificados automaticamente (executado diariamente)
    */
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async cleanupUnverifiedUsers(): Promise<void> {
-    try {
-      // Calcula a data de 24 horas atrás
-      const twentyFourHoursAgo = new Date();
-      twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+    this.logger.log('Iniciando limpeza automática de usuários não verificados...');
 
-      // Busca usuários não verificados criados há mais de 24 horas
-      const unverifiedUsers = await this.userRepository.find({
-        where: {
-          emailVerified: false,
-          provider: UserProvider.LOCAL, // Só remove usuários locais, não do Google
-          createdAt: LessThan(twentyFourHoursAgo),
-        },
-      });
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
-      if (unverifiedUsers.length > 0) {
-        // Remove os usuários não verificados
-        await this.userRepository.remove(unverifiedUsers);
+    const unverifiedUsers = await this.userRepository.find({
+      where: {
+        emailVerified: false,
+        provider: UserProvider.LOCAL,
+        createdAt: LessThan(twentyFourHoursAgo),
+      },
+    });
 
-        this.logger.log(
-          `Cleanup completed: Removed ${unverifiedUsers.length} unverified users older than 24 hours`,
-        );
-
-        // Log dos emails removidos (para auditoria)
-        const removedEmails = unverifiedUsers.map((user) => user.email);
-        this.logger.debug(`Removed emails: ${removedEmails.join(', ')}`);
-      } else {
-        this.logger.debug(
-          'Cleanup completed: No unverified users found to remove',
-        );
-      }
-    } catch (error) {
-      this.logger.error('Error during unverified users cleanup:', error);
+    if (unverifiedUsers.length > 0) {
+      await this.userRepository.remove(unverifiedUsers);
+      this.logger.log(
+        `Removidos ${unverifiedUsers.length} usuários não verificados`,
+      );
+    } else {
+      this.logger.log('Nenhum usuário não verificado encontrado para remoção');
     }
   }
 
   /**
-   * Método manual para executar a limpeza (útil para testes ou execução manual)
+   * Limpeza manual de usuários não verificados
    */
   async manualCleanupUnverifiedUsers(): Promise<{
     removed: number;
@@ -229,7 +214,6 @@ export class UsersService {
         'emailVerified',
         'provider',
         'avatar',
-        'isSuperAdmin',
         'createdAt',
         'updatedAt',
       ],
@@ -281,8 +265,8 @@ export class UsersService {
    * Verifica se um usuário pode modificar outro baseado na hierarquia
    */
   private canModifyUser(requester: User, target: User): boolean {
-    // Apenas super admin pode promover usuários a admin
-    if (requester.isSuperAdmin && !target.isSuperAdmin) {
+    // Apenas SUPER_ADMIN pode promover/revogar admins
+    if (requester.role === UserRole.SUPER_ADMIN && target.role !== UserRole.SUPER_ADMIN) {
       return true;
     }
 
@@ -298,7 +282,7 @@ export class UsersService {
   ): Promise<{ message: string; user: Partial<User> }> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      select: ['id', 'name', 'email', 'role', 'isSuperAdmin'],
+      select: ['id', 'name', 'email', 'role'],
     });
 
     if (!user) {
@@ -322,7 +306,7 @@ export class UsersService {
     // Buscar o usuário atualizado
     const updatedUser = await this.userRepository.findOne({
       where: { id: userId },
-      select: ['id', 'name', 'email', 'role', 'isSuperAdmin'],
+      select: ['id', 'name', 'email', 'role'],
     });
 
     // Log da ação
@@ -337,14 +321,14 @@ export class UsersService {
   }
 
   /**
-   * Remove o cargo de administrador de um usuário (apenas super admin)
+   * Remove o cargo de administrador de um usuário (apenas SUPER_ADMIN)
    */
   async revokeAdmin(
     userId: string,
     requester: User,
   ): Promise<{ message: string; user: Partial<User> }> {
-    // Apenas super admin pode revogar admin
-    if (!requester.isSuperAdmin) {
+    // Apenas SUPER_ADMIN pode revogar admin
+    if (requester.role !== UserRole.SUPER_ADMIN) {
       throw new ForbiddenException(
         'Apenas super administradores podem revogar privilégios de admin',
       );
@@ -352,7 +336,7 @@ export class UsersService {
 
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      select: ['id', 'name', 'email', 'role', 'isSuperAdmin'],
+      select: ['id', 'name', 'email', 'role'],
     });
 
     if (!user) {
@@ -363,20 +347,13 @@ export class UsersService {
       throw new BadRequestException('Usuário não é administrador');
     }
 
-    // Não pode revogar super admin
-    if (user.isSuperAdmin) {
-      throw new ForbiddenException(
-        'Não é possível revogar privilégios de super administrador',
-      );
-    }
-
     // Atualizar o role para user
     await this.userRepository.update(userId, { role: UserRole.USER });
 
     // Buscar o usuário atualizado
     const updatedUser = await this.userRepository.findOne({
       where: { id: userId },
-      select: ['id', 'name', 'email', 'role', 'isSuperAdmin'],
+      select: ['id', 'name', 'email', 'role'],
     });
 
     // Log da ação

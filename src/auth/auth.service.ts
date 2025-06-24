@@ -71,7 +71,7 @@ export class AuthService {
       );
     }
 
-    const payload = { email: user.email, sub: user.id };
+    const payload = { email: user.email, sub: user.id, role: user.role };
     const access_token = this.jwtService.sign(payload);
 
     const {
@@ -120,7 +120,7 @@ export class AuthService {
   }
 
   async googleLogin(user: User): Promise<AuthResponse> {
-    const payload = { email: user.email, sub: user.id };
+    const payload = { email: user.email, sub: user.id, role: user.role };
     const access_token = this.jwtService.sign(payload);
 
     const {

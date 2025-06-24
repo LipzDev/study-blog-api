@@ -25,13 +25,17 @@ import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 
 @ApiTags('Posts')
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Post()
   @ApiBearerAuth()
   @ApiOperation({
@@ -218,7 +222,8 @@ export class PostsController {
     return this.postsService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({
@@ -335,7 +340,8 @@ export class PostsController {
     return this.postsService.update(id, updatePostDto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Delete(':id')
   @ApiBearerAuth()
   @ApiOperation({
