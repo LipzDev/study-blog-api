@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
@@ -8,6 +9,7 @@ import {
   Query,
   Request,
   UseGuards,
+  Body,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -16,6 +18,7 @@ import {
   ApiQuery,
   ApiResponse,
   ApiTags,
+  ApiBody,
 } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -395,5 +398,116 @@ export class UsersController {
   async hasSuperAdmin() {
     const exists = await this.usersService.hasSuperAdmin();
     return { exists };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Delete(':id')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Excluir usuário',
+    description:
+      'Exclui um usuário do sistema. ADMIN pode excluir apenas usuários comuns, SUPER_ADMIN pode excluir qualquer usuário exceto outros SUPER_ADMIN.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do usuário a ser excluído',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuário excluído com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Usuário excluído com sucesso',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Não autorizado - Token JWT inválido ou ausente',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado - Permissões insuficientes',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Usuário não encontrado',
+  })
+  async deleteUser(@Param('id') id: string, @Request() req) {
+    return this.usersService.deleteUser(id, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Patch(':id/name')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Atualizar nome do usuário',
+    description:
+      'Atualiza o nome de um usuário. ADMIN e SUPER_ADMIN podem usar esta funcionalidade.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do usuário a ter o nome atualizado',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Novo nome do usuário',
+          example: 'João Silva',
+        },
+      },
+      required: ['name'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Nome do usuário atualizado com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Nome do usuário atualizado com sucesso',
+        },
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            email: { type: 'string' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Não autorizado - Token JWT inválido ou ausente',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado - Permissões insuficientes',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Usuário não encontrado',
+  })
+  async updateUserName(
+    @Param('id') id: string,
+    @Body() body: { name: string },
+    @Request() req,
+  ) {
+    return this.usersService.updateUserName(id, body.name, req.user);
   }
 }

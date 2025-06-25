@@ -365,9 +365,86 @@ export class UsersService {
    * Verifica se existe um Super Administrador no sistema
    */
   async hasSuperAdmin(): Promise<boolean> {
-    const count = await this.userRepository.count({
+    const superAdmin = await this.userRepository.findOne({
       where: { role: UserRole.SUPER_ADMIN },
     });
-    return count > 0;
+    return !!superAdmin;
+  }
+
+  async deleteUser(
+    userId: string,
+    requester: User,
+  ): Promise<{ message: string }> {
+    const targetUser = await this.findById(userId);
+    if (!targetUser) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    // Verificar permissões
+    if (requester.role === UserRole.ADMIN) {
+      // Admin só pode excluir usuários comuns
+      if (targetUser.role !== UserRole.USER) {
+        throw new ForbiddenException(
+          'Administradores só podem excluir usuários comuns',
+        );
+      }
+    } else if (requester.role === UserRole.SUPER_ADMIN) {
+      // Super Admin não pode excluir outros Super Admins
+      if (targetUser.role === UserRole.SUPER_ADMIN) {
+        throw new ForbiddenException(
+          'Super Administradores não podem excluir outros Super Administradores',
+        );
+      }
+    } else {
+      throw new ForbiddenException('Permissão insuficiente');
+    }
+
+    await this.userRepository.remove(targetUser);
+
+    return {
+      message: 'Usuário excluído com sucesso',
+    };
+  }
+
+  async updateUserName(
+    userId: string,
+    newName: string,
+    requester: User,
+  ): Promise<{ message: string; user: Partial<User> }> {
+    const targetUser = await this.findById(userId);
+    if (!targetUser) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    // Verificar se o nome não está vazio
+    if (!newName || newName.trim().length === 0) {
+      throw new BadRequestException('Nome não pode estar vazio');
+    }
+
+    // Verificar permissões
+    if (requester.role === UserRole.ADMIN) {
+      // Admin pode alterar nome de qualquer usuário
+    } else if (requester.role === UserRole.SUPER_ADMIN) {
+      // Super Admin pode alterar nome de qualquer usuário
+    } else {
+      throw new ForbiddenException('Permissão insuficiente');
+    }
+
+    await this.userRepository.update(userId, { name: newName.trim() });
+
+    // Retornar dados atualizados
+    const updatedUser = await this.findById(userId);
+    if (!updatedUser) {
+      throw new NotFoundException('Erro ao atualizar usuário');
+    }
+
+    return {
+      message: 'Nome do usuário atualizado com sucesso',
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+      },
+    };
   }
 }
