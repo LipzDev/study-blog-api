@@ -143,7 +143,7 @@ export class AuthService {
     if (!user) {
       // Por segurança, não revelamos se o email existe ou não
       return {
-        message: 'Se o email existir, um link de redefinição foi enviado',
+        message: 'Um link de redefinição foi enviado.',
       };
     }
 
@@ -153,7 +153,7 @@ export class AuthService {
     await this.mailService.sendPasswordResetEmail(user.email, resetToken);
 
     return {
-      message: 'Se o email existir, um link de redefinição foi enviado',
+      message: 'Um link de redefinição foi enviado.',
     };
   }
 
@@ -164,7 +164,7 @@ export class AuthService {
       resetPasswordDto.token,
       resetPasswordDto.password,
     );
-    return { message: 'Senha foi redefinida com sucesso' };
+    return { message: 'Sua senha foi redefinida com sucesso' };
   }
 
   async verifyEmail(token: string): Promise<{ message: string }> {
@@ -178,8 +178,7 @@ export class AuthService {
     if (!user) {
       // Por segurança, não revelamos se o email existe ou não
       return {
-        message:
-          'Se o email existir e não estiver verificado, um link de verificação foi enviado',
+        message: 'Um link de verificação foi enviado',
       };
     }
 
@@ -206,8 +205,7 @@ export class AuthService {
     }
 
     return {
-      message:
-        'Se o email existir e não estiver verificado, um link de verificação foi enviado',
+      message: 'Um link de verificação foi enviado.',
     };
   }
 
@@ -219,15 +217,15 @@ export class AuthService {
     if (!user) {
       return {
         verified: false,
-        message: 'Usuário não encontrado',
+        message: 'Usuário não encontrado.',
       };
     }
 
     return {
       verified: user.emailVerified,
       message: user.emailVerified
-        ? 'Email está verificado'
-        : 'Email ainda não foi verificado',
+        ? 'Email está verificado.'
+        : 'Email ainda não foi verificado.',
     };
   }
 }

@@ -1,0 +1,63 @@
+# Configurações do Ambiente
+NODE_ENV=development
+PORT=3001
+
+# Configurações do Banco de Dados PostgreSQL
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=123456
+DB_DATABASE=study_blog
+
+# Configurações JWT
+JWT_SECRET=seu-jwt-secret-super-seguro-aqui-mude-em-producao
+
+# Configurações do Google OAuth
+GOOGLE_CLIENT_ID=seu-google-client-id
+GOOGLE_CLIENT_SECRET=seu-google-client-secret
+GOOGLE_CALLBACK_URL=http://localhost:3001/auth/google/callback
+
+# Configurações de Email
+# Para usar Gmail, você precisa:
+# 1. Ativar autenticação de 2 fatores
+# 2. Gerar uma senha de app em: https://myaccount.google.com/apppasswords
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USER=seu-email@gmail.com
+MAIL_PASS=sua-senha-de-app-do-gmail
+MAIL_FROM=noreply@studyblog.com
+
+# Configurações de Email (Desenvolvimento)
+# Para testar emails em desenvolvimento, defina como 'true'
+# Para não enviar emails reais em desenvolvimento, defina como 'false'
+ENABLE_REAL_EMAILS=false
+
+# URL do Frontend
+FRONTEND_URL=http://localhost:3000
+
+# ========================================
+# TAREFAS AGENDADAS (CRON JOBS)
+# ========================================
+# 
+# O sistema possui as seguintes tarefas automáticas:
+# 
+# 1. Limpeza de usuários não verificados
+#    - Executa: Diariamente à meia-noite (horário de Brasília)
+#    - Remove: Usuários que não verificaram email há mais de 24h
+#    - Log: Detalhado no console da aplicação
+# 
+# 2. Limpeza de tokens expirados
+#    - Executa: A cada 6 horas
+#    - Remove: Tokens de redefinição de senha expirados
+#    - Log: Detalhado no console da aplicação
+# 
+# 3. Log de status do sistema
+#    - Executa: A cada hora
+#    - Mostra: Estatísticas de usuários (total, verificados, não verificados)
+#    - Log: No console da aplicação
+# 
+# Para verificar o status das tarefas:
+# GET /users/scheduled-tasks/status (requer SUPER_ADMIN)
+# 
+# Para executar limpeza manual:
+# DELETE /auth/cleanup-unverified (requer SUPER_ADMIN) 

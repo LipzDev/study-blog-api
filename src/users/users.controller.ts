@@ -1,29 +1,27 @@
 import {
+  BadRequestException,
   Controller,
   Get,
-  Post,
-  Body,
-  Patch,
+  NotFoundException,
   Param,
-  Delete,
-  UseGuards,
-  Request,
+  Patch,
   Query,
-  ForbiddenException,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import {
-  ApiTags,
   ApiBearerAuth,
   ApiOperation,
-  ApiResponse,
-  ApiQuery,
   ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger';
-import { UsersService } from './users.service';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from './entities/user.entity';
+import { UsersService } from './users.service';
 
 @ApiTags('Users')
 @Controller('users')
@@ -53,7 +51,11 @@ export class UsersController {
           },
           name: { type: 'string', example: 'João Silva' },
           email: { type: 'string', example: 'joao@exemplo.com' },
-          role: { type: 'string', enum: ['user', 'admin', 'super_admin'], example: 'user' },
+          role: {
+            type: 'string',
+            enum: ['user', 'admin', 'super_admin'],
+            example: 'user',
+          },
           emailVerified: { type: 'boolean', example: true },
           provider: {
             type: 'string',
@@ -72,7 +74,8 @@ export class UsersController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Acesso negado - Apenas ADMIN e SUPER_ADMIN podem listar usuários',
+    description:
+      'Acesso negado - Apenas ADMIN e SUPER_ADMIN podem listar usuários',
   })
   async getAllUsers() {
     return this.usersService.findAllUsers();
@@ -103,7 +106,11 @@ export class UsersController {
         id: { type: 'string', example: '123e4567-e89b-12d3-a456-426614174000' },
         name: { type: 'string', example: 'João Silva' },
         email: { type: 'string', example: 'joao@exemplo.com' },
-        role: { type: 'string', enum: ['user', 'admin', 'super_admin'], example: 'user' },
+        role: {
+          type: 'string',
+          enum: ['user', 'admin', 'super_admin'],
+          example: 'user',
+        },
         emailVerified: { type: 'boolean', example: true },
         provider: {
           type: 'string',
@@ -121,7 +128,8 @@ export class UsersController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Acesso negado - Apenas ADMIN e SUPER_ADMIN podem buscar usuários',
+    description:
+      'Acesso negado - Apenas ADMIN e SUPER_ADMIN podem buscar usuários',
   })
   @ApiResponse({
     status: 404,
@@ -139,6 +147,9 @@ export class UsersController {
     },
   })
   async searchUserByEmail(@Query('email') email: string) {
+    if (!email) {
+      throw new BadRequestException('Email é obrigatório para busca');
+    }
     return this.usersService.findByEmailForAdmin(email);
   }
 
@@ -252,5 +263,137 @@ export class UsersController {
   })
   async revokeAdmin(@Param('id') id: string, @Request() req) {
     return this.usersService.revokeAdmin(id, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Get('scheduled-tasks/status')
+  @ApiOperation({
+    summary: 'Verificar status das tarefas agendadas (Super Admin only)',
+    description: 'Retorna informações sobre as tarefas agendadas do sistema',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Status das tarefas agendadas',
+    schema: {
+      type: 'object',
+      properties: {
+        cleanupUnverifiedUsers: {
+          type: 'object',
+          properties: {
+            schedule: { type: 'string' },
+            timeZone: { type: 'string' },
+            description: { type: 'string' },
+          },
+        },
+        cleanupExpiredResetTokens: {
+          type: 'object',
+          properties: {
+            schedule: { type: 'string' },
+            timeZone: { type: 'string' },
+            description: { type: 'string' },
+          },
+        },
+        systemStatusLog: {
+          type: 'object',
+          properties: {
+            schedule: { type: 'string' },
+            timeZone: { type: 'string' },
+            description: { type: 'string' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Token JWT inválido ou expirado' })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado - requer SUPER_ADMIN',
+  })
+  getScheduledTasksStatus() {
+    return {
+      cleanupUnverifiedUsers: {
+        schedule: '0 0 * * *',
+        timeZone: 'America/Sao_Paulo',
+        description:
+          'Limpeza automática de usuários não verificados (diariamente à meia-noite)',
+      },
+      cleanupExpiredResetTokens: {
+        schedule: '0 */6 * * *',
+        timeZone: 'America/Sao_Paulo',
+        description:
+          'Limpeza de tokens de redefinição expirados (a cada 6 horas)',
+      },
+      systemStatusLog: {
+        schedule: '0 * * * *',
+        timeZone: 'America/Sao_Paulo',
+        description: 'Log de status do sistema (a cada hora)',
+      },
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Get('super-admin')
+  @ApiOperation({
+    summary: 'Obter Super Administrador atual (Admin/Super Admin only)',
+    description: 'Retorna informações do Super Administrador atual do sistema.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Super Administrador encontrado',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        name: { type: 'string' },
+        email: { type: 'string' },
+        role: { type: 'string' },
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Nenhum Super Administrador encontrado',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado - requer ADMIN ou SUPER_ADMIN',
+  })
+  async getSuperAdmin() {
+    const superAdmin = await this.usersService.getSuperAdmin();
+    if (!superAdmin) {
+      throw new NotFoundException(
+        'Nenhum Super Administrador encontrado no sistema',
+      );
+    }
+    return superAdmin;
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Get('super-admin/exists')
+  @ApiOperation({
+    summary: 'Verificar se existe Super Administrador (Admin/Super Admin only)',
+    description: 'Verifica se existe um Super Administrador no sistema.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Status verificado',
+    schema: {
+      type: 'object',
+      properties: {
+        exists: { type: 'boolean' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acesso negado - requer ADMIN ou SUPER_ADMIN',
+  })
+  async hasSuperAdmin() {
+    const exists = await this.usersService.hasSuperAdmin();
+    return { exists };
   }
 }

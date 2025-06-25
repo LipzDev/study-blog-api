@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { User, UserProvider, UserRole } from './entities/user.entity';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
@@ -39,8 +38,19 @@ export class UsersService {
       throw new ConflictException('Usuário com este email já existe');
     }
 
+    // Não permitir criação de SUPER_ADMIN através do método create
+    if (userData.role === UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException(
+        'Não é possível criar um Super Administrador através deste método. Use o método específico para promover um usuário a SUPER_ADMIN.',
+      );
+    }
+
+    // Definir role padrão como USER se não especificado
+    const role = userData.role || UserRole.USER;
+
     const user = this.userRepository.create({
       ...userData,
+      role,
       password: userData.password
         ? await bcrypt.hash(userData.password, 12)
         : undefined,
@@ -133,34 +143,6 @@ export class UsersService {
       emailVerificationToken: token,
     });
     return token;
-  }
-
-  /**
-   * Limpa usuários não verificados automaticamente (executado diariamente)
-   */
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async cleanupUnverifiedUsers(): Promise<void> {
-    this.logger.log('Iniciando limpeza automática de usuários não verificados...');
-
-    const twentyFourHoursAgo = new Date();
-    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-
-    const unverifiedUsers = await this.userRepository.find({
-      where: {
-        emailVerified: false,
-        provider: UserProvider.LOCAL,
-        createdAt: LessThan(twentyFourHoursAgo),
-      },
-    });
-
-    if (unverifiedUsers.length > 0) {
-      await this.userRepository.remove(unverifiedUsers);
-      this.logger.log(
-        `Removidos ${unverifiedUsers.length} usuários não verificados`,
-      );
-    } else {
-      this.logger.log('Nenhum usuário não verificado encontrado para remoção');
-    }
   }
 
   /**
@@ -266,7 +248,10 @@ export class UsersService {
    */
   private canModifyUser(requester: User, target: User): boolean {
     // Apenas SUPER_ADMIN pode promover/revogar admins
-    if (requester.role === UserRole.SUPER_ADMIN && target.role !== UserRole.SUPER_ADMIN) {
+    if (
+      requester.role === UserRole.SUPER_ADMIN &&
+      target.role !== UserRole.SUPER_ADMIN
+    ) {
       return true;
     }
 
@@ -289,8 +274,10 @@ export class UsersService {
       throw new NotFoundException(`Usuário com ID ${userId} não encontrado`);
     }
 
-    if (user.role === UserRole.ADMIN) {
-      throw new ConflictException('Usuário já possui cargo de administrador');
+    if (user.role !== UserRole.USER) {
+      throw new ConflictException(
+        'Só é possível promover usuários comuns para ADMIN',
+      );
     }
 
     // Verificar se o solicitante pode promover este usuário
@@ -309,7 +296,6 @@ export class UsersService {
       select: ['id', 'name', 'email', 'role'],
     });
 
-    // Log da ação
     this.logger.log(
       `User ${requester.email} promoted user ${user.email} to admin`,
     );
@@ -327,7 +313,6 @@ export class UsersService {
     userId: string,
     requester: User,
   ): Promise<{ message: string; user: Partial<User> }> {
-    // Apenas SUPER_ADMIN pode revogar admin
     if (requester.role !== UserRole.SUPER_ADMIN) {
       throw new ForbiddenException(
         'Apenas super administradores podem revogar privilégios de admin',
@@ -344,7 +329,7 @@ export class UsersService {
     }
 
     if (user.role !== UserRole.ADMIN) {
-      throw new BadRequestException('Usuário não é administrador');
+      throw new BadRequestException('Só é possível rebaixar ADMIN para USER');
     }
 
     // Atualizar o role para user
@@ -356,7 +341,6 @@ export class UsersService {
       select: ['id', 'name', 'email', 'role'],
     });
 
-    // Log da ação
     this.logger.log(
       `Super admin ${requester.email} revoked admin privileges from user ${user.email}`,
     );
@@ -365,5 +349,25 @@ export class UsersService {
       message: 'Privilégios de administrador removidos com sucesso',
       user: updatedUser!,
     };
+  }
+
+  /**
+   * Obtém o Super Administrador atual do sistema
+   */
+  async getSuperAdmin(): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { role: UserRole.SUPER_ADMIN },
+      select: ['id', 'name', 'email', 'role', 'createdAt'],
+    });
+  }
+
+  /**
+   * Verifica se existe um Super Administrador no sistema
+   */
+  async hasSuperAdmin(): Promise<boolean> {
+    const count = await this.userRepository.count({
+      where: { role: UserRole.SUPER_ADMIN },
+    });
+    return count > 0;
   }
 }

@@ -12,9 +12,9 @@ export class MailService {
   }
 
   private async initializeTransporter() {
-    const isDevelopment = this.configService.get('NODE_ENV') === 'development';
+    const isDevelopment = this.configService.get<string>('NODE_ENV') === 'development';
     const enableRealEmails =
-      this.configService.get('ENABLE_REAL_EMAILS') === 'true';
+      this.configService.get<string>('ENABLE_REAL_EMAILS') === 'true';
 
     if (isDevelopment && !enableRealEmails) {
       // Em desenvolvimento sem emails reais, usar transporter de teste
@@ -28,8 +28,8 @@ export class MailService {
       );
     } else {
       // Em produção ou desenvolvimento com emails habilitados
-      const mailUser = this.configService.get('MAIL_USER');
-      const mailPass = this.configService.get('MAIL_PASS');
+      const mailUser = this.configService.get<string>('MAIL_USER');
+      const mailPass = this.configService.get<string>('MAIL_PASS');
 
       if (!mailUser || !mailPass) {
         this.logger.warn(
@@ -44,8 +44,8 @@ export class MailService {
       }
 
       this.transporter = nodemailer.createTransport({
-        host: this.configService.get('MAIL_HOST', 'smtp.gmail.com'),
-        port: parseInt(this.configService.get('MAIL_PORT', '587')),
+        host: this.configService.get<string>('MAIL_HOST', 'smtp.gmail.com'),
+        port: parseInt(this.configService.get<string>('MAIL_PORT', '587')),
         secure: false,
         auth: {
           user: mailUser,
@@ -75,14 +75,17 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
-    const resetUrl = `${this.configService.get('FRONTEND_URL', 'http://localhost:3000')}/reset-password?token=${token}`;
-    const isDevelopment = this.configService.get('NODE_ENV') === 'development';
+    const resetUrl = `${this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000')}/reset-password?token=${token}`;
+    const isDevelopment = this.configService.get<string>('NODE_ENV') === 'development';
     const enableRealEmails =
-      this.configService.get('ENABLE_REAL_EMAILS') === 'true';
+      this.configService.get<string>('ENABLE_REAL_EMAILS') === 'true';
     const shouldSendRealEmail = !isDevelopment || enableRealEmails;
 
     const mailOptions = {
-      from: this.configService.get('MAIL_FROM', 'noreply@studyblog.com'),
+      from: this.configService.get<string>(
+        'MAIL_FROM',
+        'noreply@studyblog.com',
+      ),
       to: email,
       subject: 'Study Blog - Solicitação de Redefinição de Senha',
       html: `
@@ -128,14 +131,14 @@ export class MailService {
   }
 
   async sendEmailVerification(email: string, token: string): Promise<void> {
-    const verificationUrl = `${this.configService.get('FRONTEND_URL', 'http://localhost:3000')}/verify-email?token=${token}`;
-    const isDevelopment = this.configService.get('NODE_ENV') === 'development';
+    const verificationUrl = `${this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000')}/verify-email?token=${token}`;
+    const isDevelopment = this.configService.get<string>('NODE_ENV') === 'development';
     const enableRealEmails =
-      this.configService.get('ENABLE_REAL_EMAILS') === 'true';
+      this.configService.get<string>('ENABLE_REAL_EMAILS') === 'true';
     const shouldSendRealEmail = !isDevelopment || enableRealEmails;
 
     const mailOptions = {
-      from: this.configService.get('MAIL_FROM', 'noreply@studyblog.com'),
+      from: this.configService.get<string>('MAIL_FROM', 'noreply@studyblog.com'),
       to: email,
       subject: 'Study Blog - Verifique seu Email',
       html: `

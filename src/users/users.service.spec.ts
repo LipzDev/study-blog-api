@@ -3,12 +3,13 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Logger } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { User, UserProvider } from './entities/user.entity';
+import { User, UserProvider, UserRole } from './entities/user.entity';
 
 describe('UsersService - Cleanup Functionality', () => {
   let service: UsersService;
   let repository: Repository<User>;
   let loggerSpy: jest.SpyInstance;
+  let mockUserRepository: Repository<User>;
 
   // Mock repository
   const mockRepository = {
@@ -33,6 +34,7 @@ describe('UsersService - Cleanup Functionality', () => {
 
     service = module.get<UsersService>(UsersService);
     repository = module.get<Repository<User>>(getRepositoryToken(User));
+    mockUserRepository = module.get<Repository<User>>(getRepositoryToken(User));
 
     // Spy on logger methods
     loggerSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -255,6 +257,145 @@ describe('UsersService - Cleanup Functionality', () => {
       expect(timeDiff).toBeLessThan(60000); // Menos de 1 minuto de diferença
 
       jest.restoreAllMocks();
+    });
+  });
+
+  describe('Super Admin Management', () => {
+    it('should prevent creating SUPER_ADMIN through create method', async () => {
+      // Simular que não existe usuário com este email
+      mockUserRepository.findOne.mockResolvedValueOnce(null); // findByEmail
+
+      const userData = {
+        email: 'new@example.com',
+        name: 'New User',
+        role: UserRole.SUPER_ADMIN,
+      };
+
+      await expect(service.create(userData)).rejects.toThrow(
+        'Não é possível criar um Super Administrador através deste método. Use o método específico para promover um usuário a SUPER_ADMIN.'
+      );
+    });
+
+    it('should set default role as USER when not specified', async () => {
+      // Simular que não existe usuário com este email
+      mockUserRepository.findOne.mockResolvedValueOnce(null); // findByEmail
+
+      const userData = {
+        email: 'new@example.com',
+        name: 'New User',
+        // role não especificado
+      };
+
+      mockUserRepository.create.mockReturnValue({
+        ...userData,
+        role: UserRole.USER,
+      });
+      mockUserRepository.save.mockResolvedValue({
+        id: '1',
+        ...userData,
+        role: UserRole.USER,
+      });
+
+      const result = await service.create(userData);
+      expect(result.role).toBe(UserRole.USER);
+    });
+
+    it('should get super admin', async () => {
+      const mockSuperAdmin = {
+        id: '1',
+        name: 'Super Admin',
+        email: 'super@example.com',
+        role: UserRole.SUPER_ADMIN,
+        createdAt: new Date(),
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockSuperAdmin);
+
+      const result = await service.getSuperAdmin();
+      expect(result).toEqual(mockSuperAdmin);
+    });
+
+    it('should check if super admin exists', async () => {
+      mockUserRepository.count.mockResolvedValue(1);
+
+      const result = await service.hasSuperAdmin();
+      expect(result).toBe(true);
+    });
+
+    it('should check if super admin does not exist', async () => {
+      mockUserRepository.count.mockResolvedValue(0);
+
+      const result = await service.hasSuperAdmin();
+      expect(result).toBe(false);
+    });
+
+    it('should promote user to super admin', async () => {
+      const requester = {
+        id: '1',
+        email: 'requester@example.com',
+        role: UserRole.SUPER_ADMIN,
+      };
+
+      const targetUser = {
+        id: '2',
+        name: 'Target User',
+        email: 'target@example.com',
+        role: UserRole.ADMIN,
+      };
+
+      mockUserRepository.findOne
+        .mockResolvedValueOnce(targetUser) // find user by id
+        .mockResolvedValueOnce(null) // no existing super admin
+        .mockResolvedValueOnce({ ...targetUser, role: UserRole.SUPER_ADMIN }); // updated user
+
+      mockUserRepository.update.mockResolvedValue({ affected: 1 });
+
+      const result = await service.promoteToSuperAdmin('2', requester);
+
+      expect(result.message).toContain('Super Administrador');
+      expect(result.user.role).toBe(UserRole.SUPER_ADMIN);
+    });
+
+    it('should prevent promoting when super admin already exists', async () => {
+      const requester = {
+        id: '1',
+        email: 'requester@example.com',
+        role: UserRole.SUPER_ADMIN,
+      };
+
+      const targetUser = {
+        id: '2',
+        name: 'Target User',
+        email: 'target@example.com',
+        role: UserRole.ADMIN,
+      };
+
+      const existingSuperAdmin = {
+        id: '3',
+        name: 'Existing Super Admin',
+        email: 'existing@example.com',
+        role: UserRole.SUPER_ADMIN,
+      };
+
+      mockUserRepository.findOne
+        .mockResolvedValueOnce(targetUser) // find user by id
+        .mockResolvedValueOnce(existingSuperAdmin); // existing super admin
+
+      await expect(service.promoteToSuperAdmin('2', requester)).rejects.toThrow(
+        'Já existe um Super Administrador no sistema. Apenas um SUPER_ADMIN é permitido.'
+      );
+    });
+
+    it('should prevent non-super admin from promoting to super admin', async () => {
+      const requester = {
+        id: '1',
+        email: 'requester@example.com',
+        role: UserRole.ADMIN,
+      };
+
+      await expect(service.promoteToSuperAdmin('2', requester)).rejects.toThrow(
+        'Apenas super administradores podem promover outros para SUPER_ADMIN'
+      );
     });
   });
 });

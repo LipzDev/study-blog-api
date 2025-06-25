@@ -45,4 +45,4 @@ export class UpdateUserRoleEnum1734380000000 implements MigrationInterface {
     //   ALTER TYPE "user_role_enum" DROP VALUE 'super_admin';
     // `);
   }
-} 
+}

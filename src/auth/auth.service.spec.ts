@@ -282,9 +282,7 @@ describe('AuthService', () => {
         mockUser.email,
         resetToken,
       );
-      expect(result.message).toBe(
-        'Se o email existir, um link de redefinição foi enviado',
-      );
+      expect(result.message).toBe('Um link de redefinição foi enviado.');
     });
 
     it('should return same message for non-existent user', async () => {
@@ -294,9 +292,7 @@ describe('AuthService', () => {
 
       const result = await service.forgotPassword(forgotPasswordDto);
 
-      expect(result.message).toBe(
-        'Se o email existir, um link de redefinição foi enviado',
-      );
+      expect(result.message).toBe('Um link de redefinição foi enviado.');
       expect(usersService.updateResetPasswordToken).not.toHaveBeenCalled();
       expect(mailService.sendPasswordResetEmail).not.toHaveBeenCalled();
     });
@@ -317,7 +313,7 @@ describe('AuthService', () => {
         resetPasswordDto.token,
         resetPasswordDto.password,
       );
-      expect(result.message).toBe('Senha foi redefinida com sucesso');
+      expect(result.message).toBe('Sua senha foi redefinida com sucesso');
     });
   });
 
