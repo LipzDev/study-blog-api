@@ -29,8 +29,11 @@ async function bootstrap() {
 
   // Swagger Configuration
   const config = new DocumentBuilder()
-    .setTitle('Blog API - Sistema de Controle de Acesso Baseado em Papéis (RBAC)')
-    .setDescription(`
+    .setTitle(
+      'Blog API - Sistema de Controle de Acesso Baseado em Papéis (RBAC)',
+    )
+    .setDescription(
+      `
       ## 📚 API para Blog com Sistema RBAC Completo
 
       ### 🧠 **Sistema de Papéis (Roles)**
@@ -72,7 +75,8 @@ async function bootstrap() {
 
       ### 🔑 **Autenticação**
       Use o Bearer Token JWT retornado no login para acessar endpoints protegidos.
-    `)
+    `,
+    )
     .setVersion('2.0.0')
     .addBearerAuth(
       {
@@ -94,7 +98,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  
+
   // Customização do Swagger UI
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
