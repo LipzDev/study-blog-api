@@ -178,15 +178,28 @@ export class UsersService {
   /**
    * Lista todos os usuários (sem incluir dados sensíveis) - para admins
    */
-  async findAllUsers(): Promise<
-    Omit<
+  async findAllUsers(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
+    users: Omit<
       User,
       | 'password'
       | 'emailVerificationToken'
       | 'resetPasswordToken'
       | 'resetPasswordExpires'
-    >[]
-  > {
+    >[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const offset = (page - 1) * limit;
+
+    // Contar total de usuários
+    const total = await this.userRepository.count();
+
+    // Buscar usuários paginados
     const users = await this.userRepository.find({
       select: [
         'id',
@@ -202,30 +215,45 @@ export class UsersService {
       order: {
         createdAt: 'DESC',
       },
+      skip: offset,
+      take: limit,
     });
 
-    return users;
+    return {
+      users,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   /**
-   * Busca um usuário pelo email ou nome (sem incluir dados sensíveis) - para admins
+   * Busca usuários pelo email ou nome (sem incluir dados sensíveis) - para admins
    */
   async searchUser(
     email?: string,
     name?: string,
-  ): Promise<
-    Omit<
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
+    users: Omit<
       User,
       | 'password'
       | 'emailVerificationToken'
       | 'resetPasswordToken'
       | 'resetPasswordExpires'
-    >
-  > {
-    let user: User | null = null;
+    >[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const offset = (page - 1) * limit;
 
     if (email) {
-      user = await this.userRepository.findOne({
+      // Busca por email (sempre retorna no máximo 1 resultado)
+      const user = await this.userRepository.findOne({
         where: { email },
         select: [
           'id',
@@ -239,29 +267,82 @@ export class UsersService {
           'updatedAt',
         ],
       });
+
+      if (!user) {
+        throw new NotFoundException(`Usuário não encontrado`);
+      }
+
+      return {
+        users: [user],
+        total: 1,
+        page: 1,
+        limit: 1,
+        totalPages: 1,
+      };
     } else if (name) {
-      user = await this.userRepository.findOne({
-        where: { name },
-        select: [
-          'id',
-          'name',
-          'email',
-          'role',
-          'emailVerified',
-          'provider',
-          'avatar',
-          'createdAt',
-          'updatedAt',
-        ],
-      });
+      // Busca por nome com múltiplos resultados
+      const nameWords = name
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length > 0);
+
+      let queryBuilder = this.userRepository
+        .createQueryBuilder('user')
+        .select([
+          'user.id',
+          'user.name',
+          'user.email',
+          'user.role',
+          'user.emailVerified',
+          'user.provider',
+          'user.avatar',
+          'user.createdAt',
+          'user.updatedAt',
+        ]);
+
+      if (nameWords.length > 1) {
+        // Para múltiplas palavras, busca por todas as palavras na mesma ordem
+        const searchPattern = nameWords.map((word) => `%${word}%`).join(' ');
+        queryBuilder = queryBuilder.where(
+          'LOWER(user.name) LIKE LOWER(:pattern)',
+          { pattern: searchPattern },
+        );
+      } else {
+        // Para uma palavra, busca por nomes que contêm a palavra
+        queryBuilder = queryBuilder.where(
+          'LOWER(user.name) LIKE LOWER(:pattern)',
+          { pattern: `%${name}%` },
+        );
+      }
+
+      // Adicionar ordenação por relevância (nomes que começam com o termo primeiro)
+      queryBuilder = queryBuilder
+        .orderBy(
+          `CASE WHEN LOWER(user.name) LIKE LOWER('${name}%') THEN 0 ELSE 1 END`,
+          'ASC',
+        )
+        .addOrderBy('user.name', 'ASC');
+
+      // Contar total de resultados
+      const total = await queryBuilder.getCount();
+
+      // Buscar resultados paginados
+      const users = await queryBuilder.skip(offset).take(limit).getMany();
+
+      if (users.length === 0) {
+        throw new NotFoundException(`Usuário não encontrado`);
+      }
+
+      return {
+        users,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     }
 
-    if (!user) {
-      const searchTerm = email || name;
-      throw new NotFoundException(`Usuário não encontrado`);
-    }
-
-    return user;
+    throw new BadRequestException('Email ou nome é obrigatório para busca');
   }
 
   /**

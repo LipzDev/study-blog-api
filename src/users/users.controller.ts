@@ -39,36 +39,59 @@ export class UsersController {
   @ApiOperation({
     summary: 'Listar todos os usuários',
     description:
-      'Lista todos os usuários do sistema com informações básicas. Apenas ADMIN e SUPER_ADMIN podem usar esta funcionalidade.',
+      'Lista todos os usuários do sistema com informações básicas e paginação. Apenas ADMIN e SUPER_ADMIN podem usar esta funcionalidade.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Número da página (padrão: 1)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Número de resultados por página (padrão: 10)',
+    example: 10,
   })
   @ApiResponse({
     status: 200,
     description: 'Lista de usuários retornada com sucesso',
     schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            example: '123e4567-e89b-12d3-a456-426614174000',
+      type: 'object',
+      properties: {
+        users: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                example: '123e4567-e89b-12d3-a456-426614174000',
+              },
+              name: { type: 'string', example: 'João Silva' },
+              email: { type: 'string', example: 'joao@exemplo.com' },
+              role: {
+                type: 'string',
+                enum: ['user', 'admin', 'super_admin'],
+                example: 'user',
+              },
+              emailVerified: { type: 'boolean', example: true },
+              provider: {
+                type: 'string',
+                enum: ['local', 'google'],
+                example: 'local',
+              },
+              createdAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' },
+            },
           },
-          name: { type: 'string', example: 'João Silva' },
-          email: { type: 'string', example: 'joao@exemplo.com' },
-          role: {
-            type: 'string',
-            enum: ['user', 'admin', 'super_admin'],
-            example: 'user',
-          },
-          emailVerified: { type: 'boolean', example: true },
-          provider: {
-            type: 'string',
-            enum: ['local', 'google'],
-            example: 'local',
-          },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
         },
+        total: { type: 'number', example: 73 },
+        page: { type: 'number', example: 1 },
+        limit: { type: 'number', example: 10 },
+        totalPages: { type: 'number', example: 8 },
       },
     },
   })
@@ -81,8 +104,14 @@ export class UsersController {
     description:
       'Acesso negado - Apenas ADMIN e SUPER_ADMIN podem listar usuários',
   })
-  async getAllUsers() {
-    return this.usersService.findAllUsers();
+  async getAllUsers(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const pageNumber = page ? Math.max(1, page) : 1;
+    const limitNumber = limit ? Math.min(50, Math.max(1, limit)) : 10;
+
+    return this.usersService.findAllUsers(pageNumber, limitNumber);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -90,9 +119,9 @@ export class UsersController {
   @Get('search')
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Buscar usuário por email ou nome',
+    summary: 'Buscar usuários por email ou nome',
     description:
-      'Busca um usuário pelo email ou nome. Apenas ADMIN e SUPER_ADMIN podem usar esta funcionalidade.',
+      'Busca usuários pelo email ou nome. Retorna múltiplos resultados para busca por nome. Apenas ADMIN e SUPER_ADMIN podem usar esta funcionalidade.',
   })
   @ApiQuery({
     name: 'email',
@@ -108,28 +137,57 @@ export class UsersController {
     description: 'Nome do usuário a ser buscado',
     example: 'João Silva',
   })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Número da página (padrão: 1)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Número de resultados por página (padrão: 10)',
+    example: 10,
+  })
   @ApiResponse({
     status: 200,
-    description: 'Usuário encontrado com sucesso',
+    description: 'Usuários encontrados com sucesso',
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string', example: '123e4567-e89b-12d3-a456-426614174000' },
-        name: { type: 'string', example: 'João Silva' },
-        email: { type: 'string', example: 'joao@exemplo.com' },
-        role: {
-          type: 'string',
-          enum: ['user', 'admin', 'super_admin'],
-          example: 'user',
+        users: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                example: '123e4567-e89b-12d3-a456-426614174000',
+              },
+              name: { type: 'string', example: 'João Silva' },
+              email: { type: 'string', example: 'joao@exemplo.com' },
+              role: {
+                type: 'string',
+                enum: ['user', 'admin', 'super_admin'],
+                example: 'user',
+              },
+              emailVerified: { type: 'boolean', example: true },
+              provider: {
+                type: 'string',
+                enum: ['local', 'google'],
+                example: 'local',
+              },
+              createdAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' },
+            },
+          },
         },
-        emailVerified: { type: 'boolean', example: true },
-        provider: {
-          type: 'string',
-          enum: ['local', 'google'],
-          example: 'local',
-        },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
+        total: { type: 'number', example: 25 },
+        page: { type: 'number', example: 1 },
+        limit: { type: 'number', example: 10 },
+        totalPages: { type: 'number', example: 3 },
       },
     },
   })
@@ -160,11 +218,17 @@ export class UsersController {
   async searchUser(
     @Query('email') email?: string,
     @Query('name') name?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
   ) {
     if (!email && !name) {
       throw new BadRequestException('Email ou nome é obrigatório para busca');
     }
-    return this.usersService.searchUser(email, name);
+
+    const pageNumber = page ? Math.max(1, page) : 1;
+    const limitNumber = limit ? Math.min(50, Math.max(1, limit)) : 10;
+
+    return this.usersService.searchUser(email, name, pageNumber, limitNumber);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
