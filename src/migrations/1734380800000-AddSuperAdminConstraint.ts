@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddSuperAdminConstraint1734380800000 implements MigrationInterface {
+export class AddSuperAdminConstraint1734380800000
+  implements MigrationInterface
+{
   name = 'AddSuperAdminConstraint1734380800000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -14,6 +16,8 @@ export class AddSuperAdminConstraint1734380800000 implements MigrationInterface 
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover a constraint
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_users_super_admin_unique"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_users_super_admin_unique"`,
+    );
   }
-} 
+}

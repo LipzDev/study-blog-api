@@ -21,15 +21,12 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { User, UserRole } from '../users/entities/user.entity';
+import { JwtAuthRequest } from '../types/auth.types';
 
 // Interfaces para tipagem adequada
 interface AuthenticatedRequest {
   user: User;
   body: LoginDto;
-}
-
-interface JwtAuthRequest {
-  user: User;
 }
 
 @ApiTags('Authentication')

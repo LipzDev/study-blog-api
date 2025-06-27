@@ -73,7 +73,7 @@ describe('Cleanup Integration Tests', () => {
       mockRepository.remove.mockResolvedValue(mixedUsers);
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(mockRepository.find).toHaveBeenCalledWith({
@@ -106,7 +106,7 @@ describe('Cleanup Integration Tests', () => {
       mockRepository.remove.mockRejectedValue(new Error('Transaction failed'));
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(service['logger'].error).toHaveBeenCalledWith(
@@ -130,7 +130,7 @@ describe('Cleanup Integration Tests', () => {
 
       // Act
       const startTime = Date.now();
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
       const endTime = Date.now();
 
       // Assert
@@ -168,7 +168,7 @@ describe('Cleanup Integration Tests', () => {
       mockRepository.remove.mockResolvedValue(auditUsers);
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert - Verifica logs de auditoria
       expect(service['logger'].log).toHaveBeenCalledWith(
@@ -198,7 +198,7 @@ describe('Cleanup Integration Tests', () => {
       mockRepository.remove.mockResolvedValue(edgeCaseUser);
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(mockRepository.remove).toHaveBeenCalledWith(edgeCaseUser);
@@ -225,7 +225,7 @@ describe('Cleanup Integration Tests', () => {
       mockRepository.remove.mockResolvedValue(timezoneUser);
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(mockRepository.remove).toHaveBeenCalledWith(timezoneUser);
@@ -263,7 +263,7 @@ describe('Cleanup Integration Tests', () => {
       mockRepository.remove.mockResolvedValue(testUsers);
 
       // Act - Automatic cleanup (we can't directly compare, but we can verify behavior)
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(manualResult.removed).toBe(2);
@@ -284,7 +284,7 @@ describe('Cleanup Integration Tests', () => {
       mockRepository.find.mockResolvedValue([]);
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(mockRepository.remove).not.toHaveBeenCalled();
@@ -298,9 +298,9 @@ describe('Cleanup Integration Tests', () => {
       mockRepository.find.mockResolvedValue([]);
 
       // Act - Run multiple times
-      await service.cleanupUnverifiedUsers();
-      await service.cleanupUnverifiedUsers();
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(mockRepository.find).toHaveBeenCalledTimes(3);

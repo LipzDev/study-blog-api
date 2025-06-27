@@ -44,7 +44,7 @@ describe('ScheduledTasksService Integration', () => {
     jest.clearAllMocks();
   });
 
-  describe('cleanupUnverifiedUsers Integration', () => {
+  describe('manualCleanupUnverifiedUsers Integration', () => {
     it('should remove unverified users older than 24 hours', async () => {
       const mockUnverifiedUsers = [
         {
@@ -62,7 +62,7 @@ describe('ScheduledTasksService Integration', () => {
       mockUserRepository.find.mockResolvedValue(mockUnverifiedUsers);
       mockUserRepository.remove.mockResolvedValue(undefined);
 
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       expect(mockUserRepository.find).toHaveBeenCalledWith({
         where: {
@@ -73,13 +73,15 @@ describe('ScheduledTasksService Integration', () => {
         select: ['id', 'email', 'createdAt'],
       });
 
-      expect(mockUserRepository.remove).toHaveBeenCalledWith(mockUnverifiedUsers);
+      expect(mockUserRepository.remove).toHaveBeenCalledWith(
+        mockUnverifiedUsers,
+      );
     });
 
     it('should not remove recent unverified users', async () => {
       mockUserRepository.find.mockResolvedValue([]);
 
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       expect(mockUserRepository.find).toHaveBeenCalled();
       expect(mockUserRepository.remove).not.toHaveBeenCalled();
@@ -103,7 +105,7 @@ describe('ScheduledTasksService Integration', () => {
       await userRepository.save(verifiedUser);
 
       // Executar limpeza
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Verificar que o usuário não foi removido
       const afterCount = await userRepository.count();
@@ -128,7 +130,7 @@ describe('ScheduledTasksService Integration', () => {
       await userRepository.save(googleUser);
 
       // Executar limpeza
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Verificar que o usuário não foi removido
       const afterCount = await userRepository.count();
@@ -151,7 +153,7 @@ describe('ScheduledTasksService Integration', () => {
         {
           resetPasswordToken: undefined,
           resetPasswordExpires: undefined,
-        }
+        },
       );
     });
 
@@ -178,4 +180,4 @@ describe('ScheduledTasksService Integration', () => {
       expect(mockUserRepository.count).toHaveBeenCalledTimes(3);
     });
   });
-}); 
+});

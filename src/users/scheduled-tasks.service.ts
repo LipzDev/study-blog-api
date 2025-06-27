@@ -22,7 +22,9 @@ export class ScheduledTasksService {
     timeZone: 'America/Sao_Paulo',
   })
   async cleanupUnverifiedUsers(): Promise<void> {
-    this.logger.log('🕐 Iniciando limpeza automática de usuários não verificados...');
+    this.logger.log(
+      '🕐 Iniciando limpeza automática de usuários não verificados...',
+    );
 
     try {
       const twentyFourHoursAgo = new Date();
@@ -38,18 +40,23 @@ export class ScheduledTasksService {
       });
 
       if (unverifiedUsers.length > 0) {
-        const emails = unverifiedUsers.map(user => user.email);
+        const emails = unverifiedUsers.map((user) => user.email);
         await this.userRepository.remove(unverifiedUsers);
-        
+
         this.logger.log(
           `✅ Limpeza automática concluída: ${unverifiedUsers.length} usuários não verificados removidos`,
         );
         this.logger.log(`📧 Emails removidos: ${emails.join(', ')}`);
       } else {
-        this.logger.log('ℹ️ Nenhum usuário não verificado encontrado para remoção automática');
+        this.logger.log(
+          'ℹ️ Nenhum usuário não verificado encontrado para remoção automática',
+        );
       }
     } catch (error) {
-      this.logger.error('❌ Erro durante limpeza automática de usuários não verificados:', error);
+      this.logger.error(
+        '❌ Erro durante limpeza automática de usuários não verificados:',
+        error,
+      );
     }
   }
 
@@ -62,11 +69,13 @@ export class ScheduledTasksService {
     timeZone: 'America/Sao_Paulo',
   })
   async cleanupExpiredResetTokens(): Promise<void> {
-    this.logger.log('🕐 Iniciando limpeza de tokens de redefinição expirados...');
+    this.logger.log(
+      '🕐 Iniciando limpeza de tokens de redefinição expirados...',
+    );
 
     try {
       const now = new Date();
-      
+
       const result = await this.userRepository.update(
         {
           resetPasswordExpires: LessThan(now),
@@ -74,11 +83,13 @@ export class ScheduledTasksService {
         {
           resetPasswordToken: undefined,
           resetPasswordExpires: undefined,
-        }
+        },
       );
 
       if (result.affected && result.affected > 0) {
-        this.logger.log(`✅ Limpeza de tokens concluída: ${result.affected} tokens expirados removidos`);
+        this.logger.log(
+          `✅ Limpeza de tokens concluída: ${result.affected} tokens expirados removidos`,
+        );
       } else {
         this.logger.log('ℹ️ Nenhum token expirado encontrado para remoção');
       }
@@ -99,15 +110,17 @@ export class ScheduledTasksService {
     try {
       const totalUsers = await this.userRepository.count();
       const verifiedUsers = await this.userRepository.count({
-        where: { emailVerified: true }
+        where: { emailVerified: true },
       });
       const unverifiedUsers = await this.userRepository.count({
-        where: { emailVerified: false }
+        where: { emailVerified: false },
       });
 
-      this.logger.log(`📊 Status do Sistema - Total: ${totalUsers}, Verificados: ${verifiedUsers}, Não verificados: ${unverifiedUsers}`);
+      this.logger.log(
+        `📊 Status do Sistema - Total: ${totalUsers}, Verificados: ${verifiedUsers}, Não verificados: ${unverifiedUsers}`,
+      );
     } catch (error) {
       this.logger.error('❌ Erro ao gerar log de status do sistema:', error);
     }
   }
-} 
+}

@@ -75,7 +75,7 @@ describe('UsersService - Cleanup Functionality', () => {
       mockRepository.remove.mockResolvedValue(unverifiedUsers);
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(mockRepository.find).toHaveBeenCalledWith({
@@ -97,7 +97,7 @@ describe('UsersService - Cleanup Functionality', () => {
       mockRepository.find.mockResolvedValue([]);
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(mockRepository.remove).not.toHaveBeenCalled();
@@ -111,7 +111,7 @@ describe('UsersService - Cleanup Functionality', () => {
       mockRepository.find.mockResolvedValue([]);
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(mockRepository.find).toHaveBeenCalledWith({
@@ -132,7 +132,7 @@ describe('UsersService - Cleanup Functionality', () => {
       mockRepository.find.mockResolvedValue([]);
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(mockRepository.remove).not.toHaveBeenCalled();
@@ -144,7 +144,7 @@ describe('UsersService - Cleanup Functionality', () => {
       mockRepository.find.mockRejectedValue(error);
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(Logger.prototype.error).toHaveBeenCalledWith(
@@ -176,7 +176,7 @@ describe('UsersService - Cleanup Functionality', () => {
       mockRepository.remove.mockResolvedValue(unverifiedUsers);
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       expect(Logger.prototype.debug).toHaveBeenCalledWith(
@@ -245,7 +245,7 @@ describe('UsersService - Cleanup Functionality', () => {
       mockRepository.find.mockResolvedValue([]);
 
       // Act
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       // Assert
       const callArgs = mockRepository.find.mock.calls[0][0];
@@ -272,7 +272,7 @@ describe('UsersService - Cleanup Functionality', () => {
       };
 
       await expect(service.create(userData)).rejects.toThrow(
-        'Não é possível criar um Super Administrador através deste método. Use o método específico para promover um usuário a SUPER_ADMIN.'
+        'Não é possível criar um Super Administrador através deste método. Use o método específico para promover um usuário a SUPER_ADMIN.',
       );
     });
 
@@ -382,7 +382,7 @@ describe('UsersService - Cleanup Functionality', () => {
         .mockResolvedValueOnce(existingSuperAdmin); // existing super admin
 
       await expect(service.promoteToSuperAdmin('2', requester)).rejects.toThrow(
-        'Já existe um Super Administrador no sistema. Apenas um SUPER_ADMIN é permitido.'
+        'Já existe um Super Administrador no sistema. Apenas um SUPER_ADMIN é permitido.',
       );
     });
 
@@ -394,7 +394,7 @@ describe('UsersService - Cleanup Functionality', () => {
       };
 
       await expect(service.promoteToSuperAdmin('2', requester)).rejects.toThrow(
-        'Apenas super administradores podem promover outros para SUPER_ADMIN'
+        'Apenas super administradores podem promover outros para SUPER_ADMIN',
       );
     });
   });

@@ -28,6 +28,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
+import { JwtAuthRequest } from '../types/auth.types';
 
 @ApiTags('Posts')
 @Controller('posts')
@@ -124,7 +125,7 @@ export class PostsController {
       },
     },
   })
-  create(@Body() createPostDto: CreatePostDto, @Request() req) {
+  create(@Body() createPostDto: CreatePostDto, @Request() req: JwtAuthRequest) {
     return this.postsService.create({
       ...createPostDto,
       authorId: req.user.id,
@@ -403,7 +404,7 @@ export class PostsController {
       },
     },
   })
-  remove(@Param('id') id: string, @Request() req) {
+  remove(@Param('id') id: string, @Request() req: JwtAuthRequest) {
     return this.postsService.remove(id, req.user);
   }
 }

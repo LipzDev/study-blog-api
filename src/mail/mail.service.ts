@@ -8,11 +8,12 @@ export class MailService {
   private transporter: nodemailer.Transporter;
 
   constructor(private configService: ConfigService) {
-    this.initializeTransporter();
+    void this.initializeTransporter();
   }
 
   private async initializeTransporter() {
-    const isDevelopment = this.configService.get<string>('NODE_ENV') === 'development';
+    const isDevelopment =
+      this.configService.get<string>('NODE_ENV') === 'development';
     const enableRealEmails =
       this.configService.get<string>('ENABLE_REAL_EMAILS') === 'true';
 
@@ -76,7 +77,8 @@ export class MailService {
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
     const resetUrl = `${this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000')}/reset-password?token=${token}`;
-    const isDevelopment = this.configService.get<string>('NODE_ENV') === 'development';
+    const isDevelopment =
+      this.configService.get<string>('NODE_ENV') === 'development';
     const enableRealEmails =
       this.configService.get<string>('ENABLE_REAL_EMAILS') === 'true';
     const shouldSendRealEmail = !isDevelopment || enableRealEmails;
@@ -132,13 +134,17 @@ export class MailService {
 
   async sendEmailVerification(email: string, token: string): Promise<void> {
     const verificationUrl = `${this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000')}/verify-email?token=${token}`;
-    const isDevelopment = this.configService.get<string>('NODE_ENV') === 'development';
+    const isDevelopment =
+      this.configService.get<string>('NODE_ENV') === 'development';
     const enableRealEmails =
       this.configService.get<string>('ENABLE_REAL_EMAILS') === 'true';
     const shouldSendRealEmail = !isDevelopment || enableRealEmails;
 
     const mailOptions = {
-      from: this.configService.get<string>('MAIL_FROM', 'noreply@studyblog.com'),
+      from: this.configService.get<string>(
+        'MAIL_FROM',
+        'noreply@studyblog.com',
+      ),
       to: email,
       subject: 'Study Blog - Verifique seu Email',
       html: `

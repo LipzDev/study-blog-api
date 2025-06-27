@@ -208,6 +208,63 @@ export class UsersService {
   }
 
   /**
+   * Busca um usuário pelo email ou nome (sem incluir dados sensíveis) - para admins
+   */
+  async searchUser(
+    email?: string,
+    name?: string,
+  ): Promise<
+    Omit<
+      User,
+      | 'password'
+      | 'emailVerificationToken'
+      | 'resetPasswordToken'
+      | 'resetPasswordExpires'
+    >
+  > {
+    let user: User | null = null;
+
+    if (email) {
+      user = await this.userRepository.findOne({
+        where: { email },
+        select: [
+          'id',
+          'name',
+          'email',
+          'role',
+          'emailVerified',
+          'provider',
+          'avatar',
+          'createdAt',
+          'updatedAt',
+        ],
+      });
+    } else if (name) {
+      user = await this.userRepository.findOne({
+        where: { name },
+        select: [
+          'id',
+          'name',
+          'email',
+          'role',
+          'emailVerified',
+          'provider',
+          'avatar',
+          'createdAt',
+          'updatedAt',
+        ],
+      });
+    }
+
+    if (!user) {
+      const searchTerm = email || name;
+      throw new NotFoundException(`Usuário não encontrado`);
+    }
+
+    return user;
+  }
+
+  /**
    * Busca um usuário pelo email (sem incluir dados sensíveis) - para admins
    */
   async findByEmailForAdmin(

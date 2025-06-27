@@ -4,6 +4,7 @@ import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { User, UserProvider, UserRole } from '../users/entities/user.entity';
 
 describe('PostsController', () => {
   let controller: PostsController;
@@ -30,8 +31,9 @@ describe('PostsController', () => {
       id: '456e7890-e89b-12d3-a456-426614174001',
       email: 'test@example.com',
       name: 'Test User',
-      provider: 'local' as any,
+      provider: UserProvider.LOCAL,
       emailVerified: true,
+      role: UserRole.USER,
       createdAt: new Date(),
       updatedAt: new Date(),
       posts: [],
@@ -52,7 +54,13 @@ describe('PostsController', () => {
       id: '456e7890-e89b-12d3-a456-426614174001',
       email: 'test@example.com',
       name: 'Test User',
-    },
+      provider: UserProvider.LOCAL,
+      emailVerified: true,
+      role: UserRole.USER,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      posts: [],
+    } as User,
   };
 
   beforeEach(async () => {
@@ -109,7 +117,14 @@ describe('PostsController', () => {
 
       const result = await controller.findPaginated(1, 12);
 
-      expect(mockPostsService.findPaginated).toHaveBeenCalledWith(1, 12);
+      expect(mockPostsService.findPaginated).toHaveBeenCalledWith(
+        1,
+        12,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
       expect(result).toEqual(paginatedResult);
     });
 
@@ -119,7 +134,14 @@ describe('PostsController', () => {
 
       const result = await controller.findPaginated(2, 5);
 
-      expect(mockPostsService.findPaginated).toHaveBeenCalledWith(2, 5);
+      expect(mockPostsService.findPaginated).toHaveBeenCalledWith(
+        2,
+        5,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
       expect(result).toEqual(paginatedResult);
     });
   });
@@ -159,11 +181,16 @@ describe('PostsController', () => {
 
   describe('remove', () => {
     it('should remove a post', async () => {
-      mockPostsService.remove.mockResolvedValue(undefined);
+      mockPostsService.remove.mockResolvedValue({
+        message: 'Postagem excluída com sucesso',
+      });
 
-      await controller.remove(mockPost.id);
+      await controller.remove(mockPost.id, mockRequest);
 
-      expect(mockPostsService.remove).toHaveBeenCalledWith(mockPost.id);
+      expect(mockPostsService.remove).toHaveBeenCalledWith(
+        mockPost.id,
+        mockRequest.user,
+      );
     });
   });
 });

@@ -75,9 +75,9 @@ export class AuthService {
     const access_token = this.jwtService.sign(payload);
 
     const {
-      password,
-      resetPasswordToken,
-      emailVerificationToken,
+      password: _password,
+      resetPasswordToken: _resetPasswordToken,
+      emailVerificationToken: _emailVerificationToken,
       ...userWithoutSensitiveData
     } = user;
 
@@ -119,14 +119,14 @@ export class AuthService {
     return user;
   }
 
-  async googleLogin(user: User): Promise<AuthResponse> {
+  googleLogin(user: User): AuthResponse {
     const payload = { email: user.email, sub: user.id, role: user.role };
     const access_token = this.jwtService.sign(payload);
 
     const {
-      password,
-      resetPasswordToken,
-      emailVerificationToken,
+      password: _password,
+      resetPasswordToken: _resetPasswordToken,
+      emailVerificationToken: _emailVerificationToken,
       ...userWithoutSensitiveData
     } = user;
 

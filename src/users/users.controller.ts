@@ -25,6 +25,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from './entities/user.entity';
 import { UsersService } from './users.service';
+import { JwtAuthRequest } from '../types/auth.types';
 
 @ApiTags('Users')
 @Controller('users')
@@ -89,16 +90,23 @@ export class UsersController {
   @Get('search')
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Buscar usuário por email',
+    summary: 'Buscar usuário por email ou nome',
     description:
-      'Busca um usuário pelo email. Apenas ADMIN e SUPER_ADMIN podem usar esta funcionalidade.',
+      'Busca um usuário pelo email ou nome. Apenas ADMIN e SUPER_ADMIN podem usar esta funcionalidade.',
   })
   @ApiQuery({
     name: 'email',
-    required: true,
+    required: false,
     type: String,
     description: 'Email do usuário a ser buscado',
     example: 'usuario@exemplo.com',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    type: String,
+    description: 'Nome do usuário a ser buscado',
+    example: 'João Silva',
   })
   @ApiResponse({
     status: 200,
@@ -142,18 +150,21 @@ export class UsersController {
       properties: {
         message: {
           type: 'string',
-          example: 'Usuário com email usuario@exemplo.com não encontrado',
+          example: 'Usuário não encontrado',
         },
         error: { type: 'string', example: 'Not Found' },
         statusCode: { type: 'number', example: 404 },
       },
     },
   })
-  async searchUserByEmail(@Query('email') email: string) {
-    if (!email) {
-      throw new BadRequestException('Email é obrigatório para busca');
+  async searchUser(
+    @Query('email') email?: string,
+    @Query('name') name?: string,
+  ) {
+    if (!email && !name) {
+      throw new BadRequestException('Email ou nome é obrigatório para busca');
     }
-    return this.usersService.findByEmailForAdmin(email);
+    return this.usersService.searchUser(email, name);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -208,7 +219,10 @@ export class UsersController {
     status: 409,
     description: 'Usuário já é administrador',
   })
-  async promoteToAdmin(@Param('id') id: string, @Request() req) {
+  async promoteToAdmin(
+    @Param('id') id: string,
+    @Request() req: JwtAuthRequest,
+  ) {
     return this.usersService.promoteToAdmin(id, req.user);
   }
 
@@ -264,7 +278,7 @@ export class UsersController {
     status: 400,
     description: 'Usuário não é administrador',
   })
-  async revokeAdmin(@Param('id') id: string, @Request() req) {
+  async revokeAdmin(@Param('id') id: string, @Request() req: JwtAuthRequest) {
     return this.usersService.revokeAdmin(id, req.user);
   }
 
@@ -439,7 +453,7 @@ export class UsersController {
     status: 404,
     description: 'Usuário não encontrado',
   })
-  async deleteUser(@Param('id') id: string, @Request() req) {
+  async deleteUser(@Param('id') id: string, @Request() req: JwtAuthRequest) {
     return this.usersService.deleteUser(id, req.user);
   }
 

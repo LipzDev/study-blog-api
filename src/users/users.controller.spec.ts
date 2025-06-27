@@ -16,12 +16,14 @@ describe('getScheduledTasksStatus', () => {
       cleanupUnverifiedUsers: {
         schedule: '0 0 * * *',
         timeZone: 'America/Sao_Paulo',
-        description: 'Limpeza automática de usuários não verificados (diariamente à meia-noite)',
+        description:
+          'Limpeza automática de usuários não verificados (diariamente à meia-noite)',
       },
       cleanupExpiredResetTokens: {
         schedule: '0 */6 * * *',
         timeZone: 'America/Sao_Paulo',
-        description: 'Limpeza de tokens de redefinição expirados (a cada 6 horas)',
+        description:
+          'Limpeza de tokens de redefinição expirados (a cada 6 horas)',
       },
       systemStatusLog: {
         schedule: '0 * * * *',
@@ -42,8 +44,8 @@ describe('getScheduledTasksStatus', () => {
       user: mockUser,
     };
 
-    await expect(controller.getScheduledTasksStatus(mockRequest)).rejects.toThrow(
-      ForbiddenException
-    );
+    await expect(
+      controller.getScheduledTasksStatus(mockRequest),
+    ).rejects.toThrow(ForbiddenException);
   });
-}); 
+});

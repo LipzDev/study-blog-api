@@ -52,7 +52,7 @@ describe('ScheduledTasksService', () => {
       mockUserRepository.find.mockResolvedValue(mockUnverifiedUsers);
       mockUserRepository.remove.mockResolvedValue(undefined);
 
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       expect(mockUserRepository.find).toHaveBeenCalledWith({
         where: {
@@ -63,13 +63,15 @@ describe('ScheduledTasksService', () => {
         select: ['id', 'email', 'createdAt'],
       });
 
-      expect(mockUserRepository.remove).toHaveBeenCalledWith(mockUnverifiedUsers);
+      expect(mockUserRepository.remove).toHaveBeenCalledWith(
+        mockUnverifiedUsers,
+      );
     });
 
     it('should handle case when no unverified users found', async () => {
       mockUserRepository.find.mockResolvedValue([]);
 
-      await service.cleanupUnverifiedUsers();
+      await service.manualCleanupUnverifiedUsers();
 
       expect(mockUserRepository.find).toHaveBeenCalled();
       expect(mockUserRepository.remove).not.toHaveBeenCalled();
@@ -80,7 +82,9 @@ describe('ScheduledTasksService', () => {
       mockUserRepository.find.mockRejectedValue(error);
 
       // Não precisamos testar o log de erro, apenas garantir que não quebra
-      await expect(service.cleanupUnverifiedUsers()).resolves.not.toThrow();
+      await expect(
+        service.manualCleanupUnverifiedUsers(),
+      ).resolves.not.toThrow();
     });
   });
 
@@ -99,7 +103,7 @@ describe('ScheduledTasksService', () => {
         {
           resetPasswordToken: undefined,
           resetPasswordExpires: undefined,
-        }
+        },
       );
     });
 
@@ -126,7 +130,7 @@ describe('ScheduledTasksService', () => {
     it('should log system status with user counts', async () => {
       mockUserRepository.count
         .mockResolvedValueOnce(100) // total users
-        .mockResolvedValueOnce(90)  // verified users
+        .mockResolvedValueOnce(90) // verified users
         .mockResolvedValueOnce(10); // unverified users
 
       await service.logSystemStatus();
@@ -142,4 +146,4 @@ describe('ScheduledTasksService', () => {
       await expect(service.logSystemStatus()).resolves.not.toThrow();
     });
   });
-}); 
+});

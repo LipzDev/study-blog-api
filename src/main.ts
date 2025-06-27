@@ -125,4 +125,4 @@ async function bootstrap() {
   console.log('🚀 Server running on http://localhost:3001');
   console.log('📚 Swagger docs available at http://localhost:3001/api/docs');
 }
-bootstrap();
+void bootstrap();

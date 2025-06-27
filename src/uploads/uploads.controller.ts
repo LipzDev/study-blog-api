@@ -7,7 +7,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiConsumes, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiConsumes,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -25,7 +30,8 @@ export class UploadsController {
       storage: diskStorage({
         destination: './uploads/images',
         filename: (req, file, callback) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           const ext = extname(file.originalname);
           callback(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
         },
@@ -33,7 +39,9 @@ export class UploadsController {
       fileFilter: (req, file, callback) => {
         if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
           return callback(
-            new BadRequestException('Apenas arquivos de imagem são permitidos!'),
+            new BadRequestException(
+              'Apenas arquivos de imagem são permitidos!',
+            ),
             false,
           );
         }

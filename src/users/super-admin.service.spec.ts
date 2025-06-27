@@ -47,7 +47,7 @@ describe('UsersService - Super Admin Management', () => {
       };
 
       await expect(service.create(userData)).rejects.toThrow(
-        'Não é possível criar um Super Administrador através deste método. Use o método específico para promover um usuário a SUPER_ADMIN.'
+        'Não é possível criar um Super Administrador através deste método. Use o método específico para promover um usuário a SUPER_ADMIN.',
       );
     });
 
@@ -193,7 +193,7 @@ describe('UsersService - Super Admin Management', () => {
         .mockResolvedValueOnce(existingSuperAdmin); // existing super admin
 
       await expect(service.promoteToSuperAdmin('2', requester)).rejects.toThrow(
-        'Já existe um Super Administrador no sistema. Apenas um SUPER_ADMIN é permitido.'
+        'Já existe um Super Administrador no sistema. Apenas um SUPER_ADMIN é permitido.',
       );
     });
 
@@ -211,8 +211,8 @@ describe('UsersService - Super Admin Management', () => {
       };
 
       await expect(service.promoteToSuperAdmin('2', requester)).rejects.toThrow(
-        'Apenas super administradores podem promover outros para SUPER_ADMIN'
+        'Apenas super administradores podem promover outros para SUPER_ADMIN',
       );
     });
   });
-}); 
+});

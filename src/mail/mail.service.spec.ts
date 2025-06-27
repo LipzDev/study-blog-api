@@ -19,7 +19,7 @@ describe('MailService', () => {
   beforeEach(async () => {
     // Reset dos mocks
     jest.clearAllMocks();
-    
+
     // Mock do transporter
     mockTransporter = {
       sendMail: jest.fn(),
@@ -47,7 +47,7 @@ describe('MailService', () => {
   });
 
   describe('Inicialização', () => {
-    it('deve inicializar em modo desenvolvimento sem emails reais', async () => {
+    it('deve inicializar em modo desenvolvimento sem emails reais', () => {
       // Configurar mocks para modo desenvolvimento
       mockConfigService.get
         .mockReturnValueOnce('development') // NODE_ENV
@@ -57,7 +57,8 @@ describe('MailService', () => {
 
       // Recriar o serviço para testar a inicialização
       const newService = new MailService(configService);
-      
+
+      expect(newService).toBeDefined();
       expect(nodemailer.createTransport).toHaveBeenCalledWith({
         streamTransport: true,
         newline: 'unix',
@@ -65,7 +66,7 @@ describe('MailService', () => {
       });
     });
 
-    it('deve inicializar com configuração de email real quando credenciais estão disponíveis', async () => {
+    it('deve inicializar com configuração de email real quando credenciais estão disponíveis', () => {
       // Configurar mocks para modo produção
       mockConfigService.get
         .mockReturnValueOnce('production') // NODE_ENV
@@ -79,6 +80,7 @@ describe('MailService', () => {
       mockTransporter.verify.mockResolvedValue(true);
 
       const newService = new MailService(configService);
+      expect(newService).toBeDefined();
 
       expect(nodemailer.createTransport).toHaveBeenCalledWith({
         host: 'smtp.gmail.com',
@@ -94,7 +96,7 @@ describe('MailService', () => {
       });
     });
 
-    it('deve fallback para modo desenvolvimento quando verificação falha', async () => {
+    it('deve fallback para modo desenvolvimento quando verificação falha', () => {
       // Configurar mocks para modo produção com falha na verificação
       mockConfigService.get
         .mockReturnValueOnce('production') // NODE_ENV
@@ -108,12 +110,13 @@ describe('MailService', () => {
       mockTransporter.verify.mockRejectedValue(new Error('Connection failed'));
 
       const newService = new MailService(configService);
+      expect(newService).toBeDefined();
 
       // Deve chamar createTransport duas vezes: uma para produção e outra para fallback
       expect(nodemailer.createTransport).toHaveBeenCalledTimes(2);
     });
 
-    it('deve fallback para modo desenvolvimento quando credenciais não estão configuradas', async () => {
+    it('deve fallback para modo desenvolvimento quando credenciais não estão configuradas', () => {
       // Configurar mocks para modo produção sem credenciais
       mockConfigService.get
         .mockReturnValueOnce('production') // NODE_ENV
@@ -123,6 +126,7 @@ describe('MailService', () => {
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       const newService = new MailService(configService);
+      expect(newService).toBeDefined();
 
       expect(nodemailer.createTransport).toHaveBeenCalledWith({
         streamTransport: true,
@@ -148,13 +152,13 @@ describe('MailService', () => {
       await service.sendPasswordResetEmail(email, token);
 
       expect(loggerSpy).toHaveBeenCalledWith(
-        '[DEV MODE] Password reset email would be sent to test@example.com'
+        '[DEV MODE] Password reset email would be sent to test@example.com',
       );
       expect(loggerSpy).toHaveBeenCalledWith(
-        '[DEV MODE] Reset URL: http://localhost:3000/reset-password?token=reset-token-123'
+        '[DEV MODE] Reset URL: http://localhost:3000/reset-password?token=reset-token-123',
       );
       expect(loggerSpy).toHaveBeenCalledWith(
-        '[DEV MODE] Token: reset-token-123'
+        '[DEV MODE] Token: reset-token-123',
       );
       expect(mockTransporter.sendMail).not.toHaveBeenCalled();
     });
@@ -181,7 +185,7 @@ describe('MailService', () => {
         html: expect.stringContaining('Solicitação de Redefinição de Senha'),
       });
       expect(loggerSpy).toHaveBeenCalledWith(
-        'Password reset email sent to test@example.com'
+        'Password reset email sent to test@example.com',
       );
     });
 
@@ -206,7 +210,7 @@ describe('MailService', () => {
         html: expect.stringContaining('Solicitação de Redefinição de Senha'),
       });
       expect(loggerSpy).toHaveBeenCalledWith(
-        'Password reset email sent to test@example.com'
+        'Password reset email sent to test@example.com',
       );
     });
 
@@ -224,10 +228,12 @@ describe('MailService', () => {
       mockTransporter.sendMail.mockRejectedValue(error);
       const loggerSpy = jest.spyOn(Logger.prototype, 'error');
 
-      await expect(service.sendPasswordResetEmail(email, token)).rejects.toThrow('SMTP error');
+      await expect(
+        service.sendPasswordResetEmail(email, token),
+      ).rejects.toThrow('SMTP error');
       expect(loggerSpy).toHaveBeenCalledWith(
         'Failed to send password reset email to test@example.com',
-        error
+        error,
       );
     });
 
@@ -249,7 +255,7 @@ describe('MailService', () => {
 
       expect(loggerSpy).toHaveBeenCalledWith(
         'Failed to send password reset email to test@example.com',
-        error
+        error,
       );
     });
   });
@@ -270,13 +276,13 @@ describe('MailService', () => {
       await service.sendEmailVerification(email, token);
 
       expect(loggerSpy).toHaveBeenCalledWith(
-        '[DEV MODE] Email verification would be sent to test@example.com'
+        '[DEV MODE] Email verification would be sent to test@example.com',
       );
       expect(loggerSpy).toHaveBeenCalledWith(
-        '[DEV MODE] Verification URL: http://localhost:3000/verify-email?token=verification-token-123'
+        '[DEV MODE] Verification URL: http://localhost:3000/verify-email?token=verification-token-123',
       );
       expect(loggerSpy).toHaveBeenCalledWith(
-        '[DEV MODE] Token: verification-token-123'
+        '[DEV MODE] Token: verification-token-123',
       );
       expect(mockTransporter.sendMail).not.toHaveBeenCalled();
     });
@@ -303,7 +309,7 @@ describe('MailService', () => {
         html: expect.stringContaining('Bem-vindo ao Study Blog!'),
       });
       expect(loggerSpy).toHaveBeenCalledWith(
-        'Email verification sent to test@example.com'
+        'Email verification sent to test@example.com',
       );
     });
 
@@ -321,10 +327,12 @@ describe('MailService', () => {
       mockTransporter.sendMail.mockRejectedValue(error);
       const loggerSpy = jest.spyOn(Logger.prototype, 'error');
 
-      await expect(service.sendEmailVerification(email, token)).rejects.toThrow('SMTP error');
+      await expect(service.sendEmailVerification(email, token)).rejects.toThrow(
+        'SMTP error',
+      );
       expect(loggerSpy).toHaveBeenCalledWith(
         'Failed to send email verification to test@example.com',
-        error
+        error,
       );
     });
   });
@@ -346,8 +354,10 @@ describe('MailService', () => {
 
       expect(mockTransporter.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
-          html: expect.stringContaining('https://meuapp.com/reset-password?token=test-token'),
-        })
+          html: expect.stringContaining(
+            'https://meuapp.com/reset-password?token=test-token',
+          ),
+        }),
       );
     });
 
@@ -367,9 +377,11 @@ describe('MailService', () => {
 
       expect(mockTransporter.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
-          html: expect.stringContaining('http://localhost:3000/reset-password?token=test-token'),
-        })
+          html: expect.stringContaining(
+            'http://localhost:3000/reset-password?token=test-token',
+          ),
+        }),
       );
     });
   });
-}); 
+});
