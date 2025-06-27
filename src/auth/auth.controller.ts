@@ -8,8 +8,21 @@ import {
   Query,
   Delete,
   BadRequestException,
+  UnauthorizedException,
+  Patch,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -22,6 +35,8 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { User, UserRole } from '../users/entities/user.entity';
 import { JwtAuthRequest } from '../types/auth.types';
+import { UserProfileDto } from './dto/user-profile.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 // Interfaces para tipagem adequada
 interface AuthenticatedRequest {
@@ -113,11 +128,34 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Perfil do usuário recuperado',
-    type: User,
+    type: UserProfileDto,
   })
   @ApiResponse({ status: 401, description: 'Token JWT inválido ou expirado' })
-  getProfile(@Request() req: JwtAuthRequest): User {
-    return req.user;
+  async getProfile(@Request() req: JwtAuthRequest): Promise<UserProfileDto> {
+    // Buscar dados seguros do usuário diretamente do banco
+    const user = await this.usersService.findByIdForProfile(req.user.id);
+
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado');
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      provider: user.provider,
+      providerId: user.providerId,
+      avatar: user.avatar,
+      bio: user.bio,
+      github: user.github,
+      linkedin: user.linkedin,
+      twitter: user.twitter,
+      instagram: user.instagram,
+      emailVerified: user.emailVerified,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
   }
 
   @Delete('cleanup-unverified')
@@ -153,5 +191,89 @@ export class AuthController {
       removed: result.removed,
       emails: result.emails,
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  @ApiOperation({
+    summary: 'Atualizar perfil do usuário',
+    description: 'Atualiza os dados do usuário autenticado',
+  })
+  @ApiBody({ type: UpdateProfileDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Perfil do usuário atualizado com sucesso',
+  })
+  @ApiResponse({ status: 401, description: 'Token JWT inválido ou expirado' })
+  async updateProfile(
+    @Request() req: JwtAuthRequest,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(req.user.id, updateProfileDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('upload-avatar')
+  @ApiOperation({
+    summary: 'Upload de avatar do usuário',
+    description: 'Carrega um novo avatar para o usuário autenticado',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        avatar: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Avatar do usuário carregado com sucesso',
+  })
+  @ApiResponse({ status: 401, description: 'Token JWT inválido ou expirado' })
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: diskStorage({
+        destination: './uploads/images',
+        filename: (req, file, cb) => {
+          const timestamp = Date.now();
+          const randomString = Math.random().toString(36).substring(2, 15);
+          const extension = extname(file.originalname);
+          const filename = `avatar-${timestamp}-${randomString}${extension}`;
+          cb(null, filename);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+          return cb(
+            new BadRequestException(
+              'Apenas arquivos de imagem são permitidos!',
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+    }),
+  )
+  async uploadAvatar(
+    @Request() req: JwtAuthRequest,
+    @UploadedFile() avatar: Express.Multer.File,
+  ) {
+    if (!avatar) {
+      throw new BadRequestException('Arquivo de avatar é obrigatório');
+    }
+
+    // Gerar URL do avatar
+    const avatarUrl = `/uploads/images/${avatar.filename}`;
+
+    return this.usersService.updateAvatar(req.user.id, avatarUrl);
   }
 }

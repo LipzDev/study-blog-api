@@ -215,17 +215,33 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
 
     if (!user) {
-      return {
-        verified: false,
-        message: 'Usuário não encontrado.',
-      };
+      return { verified: false, message: 'Usuário não encontrado' };
     }
 
     return {
       verified: user.emailVerified,
-      message: user.emailVerified
-        ? 'Email está verificado.'
-        : 'Email ainda não foi verificado.',
+      message: user.emailVerified ? 'Email verificado' : 'Email não verificado',
     };
+  }
+
+  async updateProfile(
+    userId: string,
+    updateProfileDto: {
+      name?: string;
+      bio?: string;
+      github?: string;
+      linkedin?: string;
+      twitter?: string;
+      instagram?: string;
+    },
+  ) {
+    return this.usersService.updateProfile(userId, updateProfileDto);
+  }
+
+  async uploadAvatar(userId: string, avatar: Express.Multer.File) {
+    // Aqui você pode implementar a lógica de upload
+    // Por enquanto, vamos apenas retornar uma URL simulada
+    const avatarUrl = `/uploads/avatars/${avatar.filename}`;
+    return this.usersService.updateAvatar(userId, avatarUrl);
   }
 }

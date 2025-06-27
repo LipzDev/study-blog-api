@@ -71,6 +71,41 @@ export class UsersService {
     return await this.userRepository.findOne({ where: { id } });
   }
 
+  /**
+   * Busca usuário por ID retornando apenas dados seguros para perfil
+   * Exclui campos sensíveis como senha, tokens de verificação e reset
+   */
+  async findByIdForProfile(
+    id: string,
+  ): Promise<Omit<
+    User,
+    | 'password'
+    | 'emailVerificationToken'
+    | 'resetPasswordToken'
+    | 'resetPasswordExpires'
+  > | null> {
+    return await this.userRepository.findOne({
+      where: { id },
+      select: [
+        'id',
+        'name',
+        'email',
+        'provider',
+        'providerId',
+        'avatar',
+        'bio',
+        'github',
+        'linkedin',
+        'twitter',
+        'instagram',
+        'emailVerified',
+        'role',
+        'createdAt',
+        'updatedAt',
+      ],
+    });
+  }
+
   async findByProviderId(
     providerId: string,
     provider: UserProvider,
@@ -513,7 +548,10 @@ export class UsersService {
     userId: string,
     requester: User,
   ): Promise<{ message: string }> {
-    const targetUser = await this.findById(userId);
+    const targetUser = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'role'],
+    });
     if (!targetUser) {
       throw new NotFoundException('Usuário não encontrado');
     }
@@ -537,7 +575,7 @@ export class UsersService {
       throw new ForbiddenException('Permissão insuficiente');
     }
 
-    await this.userRepository.remove(targetUser);
+    await this.userRepository.delete(userId);
 
     return {
       message: 'Usuário excluído com sucesso',
@@ -583,6 +621,139 @@ export class UsersService {
         name: updatedUser.name,
         email: updatedUser.email,
       },
+    };
+  }
+
+  /**
+   * Atualiza o perfil do usuário (apenas o próprio usuário pode atualizar)
+   */
+  async updateProfile(
+    userId: string,
+    profileData: {
+      name?: string;
+      bio?: string;
+      github?: string;
+      linkedin?: string;
+      twitter?: string;
+      instagram?: string;
+    },
+  ): Promise<{
+    message: string;
+    user: Omit<
+      User,
+      | 'password'
+      | 'emailVerificationToken'
+      | 'resetPasswordToken'
+      | 'resetPasswordExpires'
+    >;
+  }> {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    // Preparar dados para atualização
+    const updateData: any = {};
+
+    if (profileData.name !== undefined) {
+      if (!profileData.name || profileData.name.trim().length === 0) {
+        throw new BadRequestException('Nome não pode estar vazio');
+      }
+      updateData.name = profileData.name.trim();
+    }
+
+    if (profileData.bio !== undefined) {
+      updateData.bio = profileData.bio.trim() || null;
+    }
+
+    // Validação das redes sociais
+    if (profileData.github !== undefined) {
+      const githubValue = profileData.github.trim();
+      if (githubValue === '' && user.github) {
+        throw new BadRequestException(
+          'GitHub não pode ser removido se já possui dados. Deixe o campo inalterado ou forneça uma URL válida.',
+        );
+      }
+      updateData.github = githubValue || null;
+    }
+
+    if (profileData.linkedin !== undefined) {
+      const linkedinValue = profileData.linkedin.trim();
+      if (linkedinValue === '' && user.linkedin) {
+        throw new BadRequestException(
+          'LinkedIn não pode ser removido se já possui dados. Deixe o campo inalterado ou forneça uma URL válida.',
+        );
+      }
+      updateData.linkedin = linkedinValue || null;
+    }
+
+    if (profileData.twitter !== undefined) {
+      const twitterValue = profileData.twitter.trim();
+      if (twitterValue === '' && user.twitter) {
+        throw new BadRequestException(
+          'Twitter não pode ser removido se já possui dados. Deixe o campo inalterado ou forneça uma URL válida.',
+        );
+      }
+      updateData.twitter = twitterValue || null;
+    }
+
+    if (profileData.instagram !== undefined) {
+      const instagramValue = profileData.instagram.trim();
+      if (instagramValue === '' && user.instagram) {
+        throw new BadRequestException(
+          'Instagram não pode ser removido se já possui dados. Deixe o campo inalterado ou forneça uma URL válida.',
+        );
+      }
+      updateData.instagram = instagramValue || null;
+    }
+
+    // Atualizar usuário
+    await this.userRepository.update(userId, updateData);
+
+    // Retornar dados atualizados
+    const updatedUser = await this.findByIdForProfile(userId);
+    if (!updatedUser) {
+      throw new NotFoundException('Erro ao atualizar perfil');
+    }
+
+    return {
+      message: 'Perfil atualizado com sucesso',
+      user: updatedUser,
+    };
+  }
+
+  /**
+   * Atualiza o avatar do usuário
+   */
+  async updateAvatar(
+    userId: string,
+    avatarUrl: string,
+  ): Promise<{
+    message: string;
+    user: Omit<
+      User,
+      | 'password'
+      | 'emailVerificationToken'
+      | 'resetPasswordToken'
+      | 'resetPasswordExpires'
+    >;
+  }> {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    await this.userRepository.update(userId, { avatar: avatarUrl });
+
+    // Retornar dados atualizados
+    const updatedUser = await this.findByIdForProfile(userId);
+    if (!updatedUser) {
+      throw new NotFoundException('Erro ao atualizar avatar');
+    }
+
+    return {
+      message: 'Avatar atualizado com sucesso',
+      user: updatedUser,
     };
   }
 }

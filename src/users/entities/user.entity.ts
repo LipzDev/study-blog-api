@@ -48,6 +48,21 @@ export class User {
   @Column({ nullable: true })
   avatar?: string;
 
+  @Column({ nullable: true, type: 'text' })
+  bio?: string;
+
+  @Column({ nullable: true })
+  github?: string;
+
+  @Column({ nullable: true })
+  linkedin?: string;
+
+  @Column({ nullable: true })
+  twitter?: string;
+
+  @Column({ nullable: true })
+  instagram?: string;
+
   @Column({ default: false })
   emailVerified: boolean;
 
