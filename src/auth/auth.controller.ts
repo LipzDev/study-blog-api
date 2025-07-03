@@ -238,7 +238,7 @@ export class AuthController {
   @UseInterceptors(
     FileInterceptor('avatar', {
       storage: diskStorage({
-        destination: './uploads/images',
+        destination: './temp/images',
         filename: (req, file, cb) => {
           const timestamp = Date.now();
           const randomString = Math.random().toString(36).substring(2, 15);
@@ -272,7 +272,7 @@ export class AuthController {
     }
 
     // Gerar URL do avatar
-    const avatarUrl = `/uploads/images/${avatar.filename}`;
+    const avatarUrl = `/temp/images/${avatar.filename}`;
 
     return this.usersService.updateAvatar(req.user.id, avatarUrl);
   }

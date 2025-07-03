@@ -241,7 +241,7 @@ export class AuthService {
   async uploadAvatar(userId: string, avatar: Express.Multer.File) {
     // Aqui você pode implementar a lógica de upload
     // Por enquanto, vamos apenas retornar uma URL simulada
-    const avatarUrl = `/uploads/avatars/${avatar.filename}`;
+    const avatarUrl = `/temp/images/${avatar.filename}`;
     return this.usersService.updateAvatar(userId, avatarUrl);
   }
 }

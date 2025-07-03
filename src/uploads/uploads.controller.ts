@@ -28,7 +28,7 @@ export class UploadsController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
-        destination: './uploads/images',
+        destination: './temp/images',
         filename: (req, file, callback) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -62,7 +62,7 @@ export class UploadsController {
       filename: file.filename,
       originalName: file.originalname,
       size: file.size,
-      url: `/uploads/images/${file.filename}`,
+      url: `/temp/images/${file.filename}`,
     };
   }
 }

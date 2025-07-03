@@ -12,9 +12,9 @@ describe('UploadsController', () => {
     encoding: '7bit',
     mimetype: 'image/jpeg',
     size: 1024000, // 1MB
-    destination: './uploads/images',
+    destination: './temp/images',
     filename: 'image-1234567890-123456789.jpg',
-    path: './uploads/images/image-1234567890-123456789.jpg',
+    path: './temp/images/image-1234567890-123456789.jpg',
     buffer: Buffer.from('fake-image-data'),
     stream: {} as any,
   };
@@ -39,7 +39,7 @@ describe('UploadsController', () => {
         filename: mockFile.filename,
         originalName: mockFile.originalname,
         size: mockFile.size,
-        url: `/uploads/images/${mockFile.filename}`,
+        url: `/temp/images/${mockFile.filename}`,
       });
     });
 
@@ -76,7 +76,7 @@ describe('UploadsController', () => {
         filename: pngFile.filename,
         originalName: pngFile.originalname,
         size: pngFile.size,
-        url: `/uploads/images/${pngFile.filename}`,
+        url: `/temp/images/${pngFile.filename}`,
       });
     });
 
@@ -93,7 +93,7 @@ describe('UploadsController', () => {
         filename: largeFile.filename,
         originalName: largeFile.originalname,
         size: largeFile.size,
-        url: `/uploads/images/${largeFile.filename}`,
+        url: `/temp/images/${largeFile.filename}`,
       });
     });
 
@@ -105,7 +105,7 @@ describe('UploadsController', () => {
 
       const result = controller.uploadImage(customFile);
 
-      expect(result.url).toBe('/uploads/images/custom-filename-123.jpg');
+      expect(result.url).toBe('/temp/images/custom-filename-123.jpg');
     });
 
     it('should preserve original filename in response', () => {
@@ -199,7 +199,7 @@ describe('UploadsController', () => {
       const result = controller.uploadImage(mockFile);
 
       expect(result.url).toMatch(
-        /^\/uploads\/images\/.+\.(jpg|jpeg|png|gif|webp)$/,
+        /^\/temp\/images\/.+\.(jpg|jpeg|png|gif|webp)$/,
       );
     });
   });
