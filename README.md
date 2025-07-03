@@ -1,98 +1,286 @@
+# 📚 Study Blog API
+
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="NestJS Logo" />
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+<p align="center">
+  <strong>Backend de uma plataforma moderna para compartilhar conhecimento e experiências de estudo</strong>
 </p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+## 🚀 Sobre o Projeto
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Esta é a API backend de uma plataforma de blog educacional desenvolvida com **NestJS**, **TypeScript** e **PostgreSQL**. O sistema oferece uma experiência completa para criar, gerenciar e consumir conteúdo educacional através de endpoints RESTful seguros e escaláveis.
 
-## Project setup
+### ✨ Funcionalidades Principais
+
+- 🔐 **Sistema de Autenticação Completo**
+
+  - Login/Registro com JWT
+  - Login com Google OAuth
+  - Verificação de email
+  - Recuperação de senha
+  - Upload de avatar
+
+- 👥 **Controle de Acesso Baseado em Papéis (RBAC)**
+
+  - **SUPER_ADMIN**: Acesso total ao sistema
+  - **ADMIN**: Gerenciamento de usuários e posts
+  - **USER**: Funcionalidades básicas
+
+- 📝 **Gerenciamento de Posts**
+
+  - CRUD completo de posts
+  - Upload de imagens
+  - Paginação e filtros avançados
+  - Controle de permissões por papel
+
+- 📧 **Sistema de Email**
+
+  - Verificação de conta
+  - Recuperação de senha
+  - Notificações automáticas
+
+- 🗂️ **Upload de Arquivos**
+  - Upload de imagens para posts
+  - Upload de avatares
+  - Validação de tipos e tamanhos
+
+## 🛠️ Tecnologias Utilizadas
+
+- **Framework**: NestJS
+- **Linguagem**: TypeScript
+- **Banco de Dados**: PostgreSQL
+- **ORM**: TypeORM
+- **Autenticação**: Passport.js + JWT
+- **Upload**: Multer
+- **Email**: Nodemailer
+- **Documentação**: Swagger/OpenAPI
+- **Testes**: Jest
+
+## 📋 Pré-requisitos
+
+- Node.js (versão 16 ou superior)
+- PostgreSQL
+- npm ou yarn
+
+## ⚙️ Configuração do Ambiente
+
+### 1. Clone o repositório
 
 ```bash
-$ yarn install
+git clone <url-do-repositorio>
+cd study-blog-api
 ```
 
-## Compile and run the project
+### 2. Instale as dependências
 
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+npm install
+# ou
+yarn install
 ```
 
-## Run tests
+### 3. Configure as variáveis de ambiente
+
+Copie o arquivo de template e configure suas variáveis:
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+cp env-template.txt .env
 ```
 
-## Deployment
+Edite o arquivo `.env` com suas configurações:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+```env
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=seu_usuario
+DB_PASSWORD=sua_senha
+DB_DATABASE=study_blog
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+# JWT
+JWT_SECRET=seu_jwt_secret_super_seguro
+JWT_EXPIRES_IN=24h
+
+# Google OAuth
+GOOGLE_CLIENT_ID=seu_google_client_id
+GOOGLE_CLIENT_SECRET=seu_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:3001/auth/google/callback
+
+# Email
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USER=seu_email@gmail.com
+MAIL_PASS=sua_senha_de_app
+MAIL_FROM=seu_email@gmail.com
+
+# App
+PORT=3001
+NODE_ENV=development
+```
+
+### 4. Configure o banco de dados
 
 ```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
+# Crie o banco de dados
+createdb study_blog
+
+# O TypeORM irá criar as tabelas automaticamente em desenvolvimento
+# (synchronize: true está habilitado)
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 🚀 Como Executar
 
-## Resources
+### Desenvolvimento
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+# Modo desenvolvimento com hot reload
+npm run start:dev
+# ou
+yarn start:dev
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Produção
 
-## Support
+```bash
+# Build do projeto
+npm run build
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Executar em produção
+npm run start:prod
+```
 
-## Stay in touch
+## 🧪 Executando Testes
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+# Testes unitários
+npm run test
 
-## License
+# Testes e2e
+npm run test:e2e
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Cobertura de testes
+npm run test:cov
+```
+
+## 📚 Documentação da API
+
+Após iniciar o servidor, acesse a documentação Swagger:
+
+**URL**: http://localhost:3001/api/docs
+
+A documentação inclui:
+
+- Todos os endpoints disponíveis
+- Exemplos de requisições e respostas
+- Autenticação JWT
+- Testes interativos
+
+## 🔐 Endpoints Principais
+
+### Autenticação
+
+- `POST /auth/register` - Registrar novo usuário
+- `POST /auth/login` - Login com email/senha
+- `GET /auth/google` - Login com Google
+- `POST /auth/forgot-password` - Solicitar recuperação de senha
+- `POST /auth/reset-password` - Redefinir senha
+
+### Posts
+
+- `GET /posts` - Listar posts (com paginação)
+- `POST /posts` - Criar novo post
+- `GET /posts/:id` - Obter post específico
+- `PUT /posts/:id` - Atualizar post
+- `DELETE /posts/:id` - Deletar post
+
+### Usuários
+
+- `GET /users` - Listar usuários (ADMIN/SUPER_ADMIN)
+- `GET /users/:id` - Obter usuário específico
+- `PUT /users/:id` - Atualizar usuário
+- `DELETE /users/:id` - Deletar usuário
+
+### Uploads
+
+- `POST /uploads/image` - Upload de imagem para posts
+- `POST /auth/upload-avatar` - Upload de avatar
+
+## 👥 Sistema de Papéis
+
+### SUPER_ADMIN
+
+- Acesso total ao sistema
+- Pode promover/rebaixar administradores
+- Pode deletar qualquer post
+- Gerenciamento completo de usuários
+
+### ADMIN
+
+- Pode listar e buscar usuários
+- Pode deletar qualquer post
+- **NÃO** pode promover/rebaixar admins
+
+### USER
+
+- Pode criar, editar e deletar seus próprios posts
+- Acesso às funcionalidades básicas
+- Pode atualizar seu próprio perfil
+
+## 🔧 Estrutura do Projeto
+
+```
+src/
+├── App/                 # Módulo principal
+├── auth/               # Autenticação e autorização
+│   ├── guards/         # Guards de autenticação
+│   ├── strategies/     # Estratégias do Passport
+│   └── dto/           # DTOs de autenticação
+├── posts/             # Gerenciamento de posts
+├── users/             # Gerenciamento de usuários
+├── mail/              # Sistema de email
+├── uploads/           # Upload de arquivos
+└── types/             # Tipos TypeScript
+```
+
+## 🚀 Deploy
+
+### Variáveis de Ambiente para Produção
+
+Certifique-se de configurar:
+
+- `NODE_ENV=production`
+- `synchronize=false` (desabilite sincronização automática)
+- Configure um JWT_SECRET forte
+- Configure credenciais de email válidas
+
+### Docker (Opcional)
+
+```bash
+# Build da imagem
+docker build -t study-blog-api .
+
+# Executar container
+docker run -p 3001:3001 study-blog-api
+```
+
+## 🤝 Contribuindo
+
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## 📞 Suporte
+
+Se você encontrar algum problema ou tiver dúvidas, abra uma issue no repositório.
+
+---
+
+**Desenvolvido com ❤️ usando NestJS**
