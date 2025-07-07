@@ -184,12 +184,38 @@ export class PostsService {
     return post;
   }
 
-  async findBySlug(slug: string): Promise<Post> {
-    const post = await this.postRepository.findOne({ where: { slug } });
+  async findBySlug(slug: string): Promise<any> {
+    const post = await this.postRepository.findOne({
+      where: { slug },
+      relations: ['author'],
+    });
     if (!post) {
       throw new NotFoundException(`Post with slug ${slug} not found`);
     }
-    return post;
+    // Monta author seguro
+    const safeAuthor = post.author
+      ? {
+          id: post.author.id,
+          name: post.author.name,
+          email: post.author.email,
+          avatar: post.author.avatar,
+          bio: post.author.bio,
+          github: post.author.github,
+          linkedin: post.author.linkedin,
+          twitter: post.author.twitter,
+          instagram: post.author.instagram,
+          role: post.author.role,
+          createdAt: post.author.createdAt,
+          updatedAt: post.author.updatedAt,
+        }
+      : null;
+    // Garante compatibilidade de image
+    return {
+      ...post,
+      author: safeAuthor,
+      createdAt: post.date,
+      image: post.image || post.imagePath || null,
+    };
   }
 
   async update(id: string, updatePostDto: UpdatePostDto): Promise<Post> {
