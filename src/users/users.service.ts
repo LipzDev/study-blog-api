@@ -669,41 +669,21 @@ export class UsersService {
     // Validação das redes sociais
     if (profileData.github !== undefined) {
       const githubValue = profileData.github.trim();
-      if (githubValue === '' && user.github) {
-        throw new BadRequestException(
-          'GitHub não pode ser removido se já possui dados. Deixe o campo inalterado ou forneça uma URL válida.',
-        );
-      }
       updateData.github = githubValue || null;
     }
 
     if (profileData.linkedin !== undefined) {
       const linkedinValue = profileData.linkedin.trim();
-      if (linkedinValue === '' && user.linkedin) {
-        throw new BadRequestException(
-          'LinkedIn não pode ser removido se já possui dados. Deixe o campo inalterado ou forneça uma URL válida.',
-        );
-      }
       updateData.linkedin = linkedinValue || null;
     }
 
     if (profileData.twitter !== undefined) {
       const twitterValue = profileData.twitter.trim();
-      if (twitterValue === '' && user.twitter) {
-        throw new BadRequestException(
-          'Twitter não pode ser removido se já possui dados. Deixe o campo inalterado ou forneça uma URL válida.',
-        );
-      }
       updateData.twitter = twitterValue || null;
     }
 
     if (profileData.instagram !== undefined) {
       const instagramValue = profileData.instagram.trim();
-      if (instagramValue === '' && user.instagram) {
-        throw new BadRequestException(
-          'Instagram não pode ser removido se já possui dados. Deixe o campo inalterado ou forneça uma URL válida.',
-        );
-      }
       updateData.instagram = instagramValue || null;
     }
 
