@@ -76,7 +76,7 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
-    const resetUrl = `${this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000')}/reset-password?token=${token}`;
+    const resetUrl = `${this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000')}/auth/reset-password?token=${token}`;
     const isDevelopment =
       this.configService.get<string>('NODE_ENV') === 'development';
     const enableRealEmails =
@@ -133,7 +133,7 @@ export class MailService {
   }
 
   async sendEmailVerification(email: string, token: string): Promise<void> {
-    const verificationUrl = `${this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000')}/verify-email?token=${token}`;
+    const verificationUrl = `${this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000')}/auth/verify-email?token=${token}`;
     const isDevelopment =
       this.configService.get<string>('NODE_ENV') === 'development';
     const enableRealEmails =

@@ -240,17 +240,24 @@ export class PostsService {
   }
 
   /**
-   * Verifica se o usuário pode excluir a postagem
-   * - SUPER_ADMIN e ADMIN podem excluir qualquer postagem
-   * - Usuários comuns só podem excluir suas próprias postagens
+   * Verifica se o usuário pode excluir/editar a postagem
+   * - SUPER_ADMIN pode tudo
+   * - ADMIN pode posts de USER e ADMIN, mas nunca de SUPER_ADMIN
+   * - USER só pode o próprio post
    */
   private canUserDeletePost(user: User, post: Post): boolean {
-    // SUPER_ADMIN e ADMIN podem excluir qualquer postagem
-    if (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN) {
-      return true;
+    if (user.role === UserRole.SUPER_ADMIN) {
+      return true; // superadmin pode tudo
     }
-
-    // Usuário comum só pode excluir suas próprias postagens
+    if (user.role === UserRole.ADMIN) {
+      // admin pode excluir/editar posts de user comum e de admin, mas nunca de superadmin
+      if (post.author && post.author.role) {
+        return post.author.role !== UserRole.SUPER_ADMIN;
+      }
+      // fallback: se não tem author carregado, não permite
+      return false;
+    }
+    // user só pode excluir/editar o próprio post
     return user.id === post.authorId;
   }
 }
