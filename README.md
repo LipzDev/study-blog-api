@@ -64,6 +64,20 @@ Esta é a API backend de uma plataforma de blog educacional desenvolvida com **N
 - PostgreSQL
 - npm ou yarn
 
+## 🌐 Variáveis de Ambiente Importantes
+
+Adicione as seguintes variáveis ao seu arquivo .env:
+
+```env
+FRONTEND_URL=http://localhost:3000
+API_URL=http://localhost:3001
+```
+
+- `FRONTEND_URL`: URL do frontend (Next.js)
+- `API_URL`: URL da API (NestJS)
+
+Certifique-se de configurar corretamente essas variáveis para o ambiente de desenvolvimento e produção.
+
 ## ⚙️ Configuração do Ambiente
 
 ### 1. Clone o repositório
@@ -89,7 +103,7 @@ Copie o arquivo de template e configure suas variáveis:
 cp env-template.txt .env
 ```
 
-Edite o arquivo `.env` com suas configurações:
+Edite o arquivo `.env` com suas configurações, incluindo FRONTEND_URL e API_URL:
 
 ```env
 # Database
@@ -118,6 +132,9 @@ MAIL_FROM=seu_email@gmail.com
 # App
 PORT=3001
 NODE_ENV=development
+
+FRONTEND_URL=http://localhost:3000
+API_URL=http://localhost:3001
 ```
 
 ### 4. Configure o banco de dados
@@ -140,6 +157,8 @@ npm run start:dev
 # ou
 yarn start:dev
 ```
+
+> Certifique-se de que as variáveis FRONTEND_URL e API_URL estejam corretamente configuradas no seu .env antes de iniciar o backend.
 
 ### Produção
 

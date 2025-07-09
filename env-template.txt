@@ -34,6 +34,7 @@ ENABLE_REAL_EMAILS=false
 
 # URL do Frontend
 FRONTEND_URL=http://localhost:3000
+API_URL=http://localhost:3001
 
 # ========================================
 # TAREFAS AGENDADAS (CRON JOBS)

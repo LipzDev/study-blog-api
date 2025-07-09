@@ -52,7 +52,7 @@ describe('MailService', () => {
       mockConfigService.get
         .mockReturnValueOnce('development') // NODE_ENV
         .mockReturnValueOnce(false) // ENABLE_REAL_EMAILS
-        .mockReturnValueOnce('http://localhost:3000') // FRONTEND_URL
+        .mockReturnValueOnce(process.env.FRONTEND_URL) // FRONTEND_URL
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       // Recriar o serviço para testar a inicialização
@@ -74,7 +74,7 @@ describe('MailService', () => {
         .mockReturnValueOnce('password123') // MAIL_PASS
         .mockReturnValueOnce('smtp.gmail.com') // MAIL_HOST
         .mockReturnValueOnce('587') // MAIL_PORT
-        .mockReturnValueOnce('http://localhost:3000') // FRONTEND_URL
+        .mockReturnValueOnce(process.env.FRONTEND_URL) // FRONTEND_URL
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       mockTransporter.verify.mockResolvedValue(true);
@@ -104,7 +104,7 @@ describe('MailService', () => {
         .mockReturnValueOnce('password123') // MAIL_PASS
         .mockReturnValueOnce('smtp.gmail.com') // MAIL_HOST
         .mockReturnValueOnce('587') // MAIL_PORT
-        .mockReturnValueOnce('http://localhost:3000') // FRONTEND_URL
+        .mockReturnValueOnce(process.env.FRONTEND_URL) // FRONTEND_URL
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       mockTransporter.verify.mockRejectedValue(new Error('Connection failed'));
@@ -122,7 +122,7 @@ describe('MailService', () => {
         .mockReturnValueOnce('production') // NODE_ENV
         .mockReturnValueOnce(null) // MAIL_USER
         .mockReturnValueOnce(null) // MAIL_PASS
-        .mockReturnValueOnce('http://localhost:3000') // FRONTEND_URL
+        .mockReturnValueOnce(process.env.FRONTEND_URL) // FRONTEND_URL
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       const newService = new MailService(configService);
@@ -144,7 +144,7 @@ describe('MailService', () => {
       mockConfigService.get
         .mockReturnValueOnce('development') // NODE_ENV
         .mockReturnValueOnce(false) // ENABLE_REAL_EMAILS
-        .mockReturnValueOnce('http://localhost:3000') // FRONTEND_URL
+        .mockReturnValueOnce(process.env.FRONTEND_URL) // FRONTEND_URL
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       const loggerSpy = jest.spyOn(Logger.prototype, 'log');
@@ -155,7 +155,9 @@ describe('MailService', () => {
         '[DEV MODE] Password reset email would be sent to test@example.com',
       );
       expect(loggerSpy).toHaveBeenCalledWith(
-        '[DEV MODE] Reset URL: http://localhost:3000/reset-password?token=reset-token-123',
+        '[DEV MODE] Reset URL: ' +
+          process.env.FRONTEND_URL +
+          '/reset-password?token=reset-token-123',
       );
       expect(loggerSpy).toHaveBeenCalledWith(
         '[DEV MODE] Token: reset-token-123',
@@ -170,7 +172,7 @@ describe('MailService', () => {
       mockConfigService.get
         .mockReturnValueOnce('development') // NODE_ENV
         .mockReturnValueOnce('true') // ENABLE_REAL_EMAILS
-        .mockReturnValueOnce('http://localhost:3000') // FRONTEND_URL
+        .mockReturnValueOnce(process.env.FRONTEND_URL) // FRONTEND_URL
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       mockTransporter.sendMail.mockResolvedValue(true);
@@ -195,7 +197,7 @@ describe('MailService', () => {
 
       mockConfigService.get
         .mockReturnValueOnce('production') // NODE_ENV
-        .mockReturnValueOnce('http://localhost:3000') // FRONTEND_URL
+        .mockReturnValueOnce(process.env.FRONTEND_URL) // FRONTEND_URL
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       mockTransporter.sendMail.mockResolvedValue(true);
@@ -221,7 +223,7 @@ describe('MailService', () => {
       mockConfigService.get
         .mockReturnValueOnce('development') // NODE_ENV
         .mockReturnValueOnce('true') // ENABLE_REAL_EMAILS
-        .mockReturnValueOnce('http://localhost:3000') // FRONTEND_URL
+        .mockReturnValueOnce(process.env.FRONTEND_URL) // FRONTEND_URL
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       const error = new Error('SMTP error');
@@ -244,7 +246,7 @@ describe('MailService', () => {
       mockConfigService.get
         .mockReturnValueOnce('development') // NODE_ENV
         .mockReturnValueOnce(false) // ENABLE_REAL_EMAILS
-        .mockReturnValueOnce('http://localhost:3000') // FRONTEND_URL
+        .mockReturnValueOnce(process.env.FRONTEND_URL) // FRONTEND_URL
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       const error = new Error('SMTP error');
@@ -268,7 +270,7 @@ describe('MailService', () => {
       mockConfigService.get
         .mockReturnValueOnce('development') // NODE_ENV
         .mockReturnValueOnce(false) // ENABLE_REAL_EMAILS
-        .mockReturnValueOnce('http://localhost:3000') // FRONTEND_URL
+        .mockReturnValueOnce(process.env.FRONTEND_URL) // FRONTEND_URL
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       const loggerSpy = jest.spyOn(Logger.prototype, 'log');
@@ -279,7 +281,9 @@ describe('MailService', () => {
         '[DEV MODE] Email verification would be sent to test@example.com',
       );
       expect(loggerSpy).toHaveBeenCalledWith(
-        '[DEV MODE] Verification URL: http://localhost:3000/verify-email?token=verification-token-123',
+        '[DEV MODE] Verification URL: ' +
+          process.env.FRONTEND_URL +
+          '/verify-email?token=verification-token-123',
       );
       expect(loggerSpy).toHaveBeenCalledWith(
         '[DEV MODE] Token: verification-token-123',
@@ -294,7 +298,7 @@ describe('MailService', () => {
       mockConfigService.get
         .mockReturnValueOnce('development') // NODE_ENV
         .mockReturnValueOnce('true') // ENABLE_REAL_EMAILS
-        .mockReturnValueOnce('http://localhost:3000') // FRONTEND_URL
+        .mockReturnValueOnce(process.env.FRONTEND_URL) // FRONTEND_URL
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       mockTransporter.sendMail.mockResolvedValue(true);
@@ -320,7 +324,7 @@ describe('MailService', () => {
       mockConfigService.get
         .mockReturnValueOnce('development') // NODE_ENV
         .mockReturnValueOnce('true') // ENABLE_REAL_EMAILS
-        .mockReturnValueOnce('http://localhost:3000') // FRONTEND_URL
+        .mockReturnValueOnce(process.env.FRONTEND_URL) // FRONTEND_URL
         .mockReturnValueOnce('noreply@studyblog.com'); // MAIL_FROM
 
       const error = new Error('SMTP error');
@@ -378,7 +382,7 @@ describe('MailService', () => {
       expect(mockTransporter.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
           html: expect.stringContaining(
-            'http://localhost:3000/reset-password?token=test-token',
+            '${process.env.FRONTEND_URL}/reset-password?token=test-token',
           ),
         }),
       );

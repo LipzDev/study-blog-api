@@ -9,8 +9,11 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Enable CORS
+  const allowedOrigins = [process.env.FRONTEND_URL, process.env.API_URL].filter(
+    Boolean,
+  ) as string[];
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'], // Frontend URLs
+    origin: allowedOrigins, // Frontend URLs
     credentials: true,
   });
 
@@ -89,8 +92,8 @@ async function bootstrap() {
       },
       'JWT-auth', // This name here is important for references
     )
-    .addServer('http://localhost:3001', 'Servidor de Desenvolvimento')
-    .addServer('http://localhost:3000', 'Servidor Alternativo')
+    .addServer(process.env.API_URL || '', 'Servidor de Desenvolvimento')
+    .addServer(process.env.FRONTEND_URL || '', 'Servidor Alternativo')
     .addTag('Authentication', 'Endpoints de autenticação e autorização')
     .addTag('Posts', 'Gerenciamento de posts do blog')
     .addTag('Users', 'Gerenciamento de usuários (ADMIN/SUPER_ADMIN)')
