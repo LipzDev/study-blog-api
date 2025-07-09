@@ -632,10 +632,10 @@ export class UsersService {
     profileData: {
       name?: string;
       bio?: string;
-      github?: string;
-      linkedin?: string;
-      twitter?: string;
-      instagram?: string;
+      github?: string | null;
+      linkedin?: string | null;
+      twitter?: string | null;
+      instagram?: string | null;
     },
   ): Promise<{
     message: string;
@@ -668,22 +668,28 @@ export class UsersService {
 
     // Validação das redes sociais
     if (profileData.github !== undefined) {
-      const githubValue = profileData.github.trim();
+      const githubValue = profileData.github ? profileData.github.trim() : null;
       updateData.github = githubValue || null;
     }
 
     if (profileData.linkedin !== undefined) {
-      const linkedinValue = profileData.linkedin.trim();
+      const linkedinValue = profileData.linkedin
+        ? profileData.linkedin.trim()
+        : null;
       updateData.linkedin = linkedinValue || null;
     }
 
     if (profileData.twitter !== undefined) {
-      const twitterValue = profileData.twitter.trim();
+      const twitterValue = profileData.twitter
+        ? profileData.twitter.trim()
+        : null;
       updateData.twitter = twitterValue || null;
     }
 
     if (profileData.instagram !== undefined) {
-      const instagramValue = profileData.instagram.trim();
+      const instagramValue = profileData.instagram
+        ? profileData.instagram.trim()
+        : null;
       updateData.instagram = instagramValue || null;
     }
 

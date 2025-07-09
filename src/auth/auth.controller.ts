@@ -207,7 +207,15 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Token JWT inválido ou expirado' })
   async updateProfile(
     @Request() req: JwtAuthRequest,
-    @Body() updateProfileDto: UpdateProfileDto,
+    @Body()
+    updateProfileDto: {
+      name?: string;
+      bio?: string;
+      github?: string | null;
+      linkedin?: string | null;
+      twitter?: string | null;
+      instagram?: string | null;
+    },
   ) {
     return this.usersService.updateProfile(req.user.id, updateProfileDto);
   }

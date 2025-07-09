@@ -20,34 +20,54 @@ export class UpdateProfileDto {
   @MaxLength(500)
   bio?: string;
 
-  @ApiProperty({ required: false, description: 'URL do GitHub' })
+  @ApiProperty({
+    required: false,
+    description: 'URL do GitHub',
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
   @ValidateIf(
     (o) => o.github !== undefined && o.github !== null && o.github !== '',
   )
   @IsUrl({}, { message: 'GitHub deve ser uma URL válida' })
   @MaxLength(255)
-  github?: string;
+  github?: string | null;
 
-  @ApiProperty({ required: false, description: 'URL do LinkedIn' })
+  @ApiProperty({
+    required: false,
+    description: 'URL do LinkedIn',
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
   @ValidateIf(
     (o) => o.linkedin !== undefined && o.linkedin !== null && o.linkedin !== '',
   )
   @IsUrl({}, { message: 'LinkedIn deve ser uma URL válida' })
   @MaxLength(255)
-  linkedin?: string;
+  linkedin?: string | null;
 
-  @ApiProperty({ required: false, description: 'URL do Twitter' })
+  @ApiProperty({
+    required: false,
+    description: 'URL do Twitter',
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
   @ValidateIf(
     (o) => o.twitter !== undefined && o.twitter !== null && o.twitter !== '',
   )
   @IsUrl({}, { message: 'Twitter deve ser uma URL válida' })
   @MaxLength(255)
-  twitter?: string;
+  twitter?: string | null;
 
-  @ApiProperty({ required: false, description: 'URL do Instagram' })
+  @ApiProperty({
+    required: false,
+    description: 'URL do Instagram',
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
   @ValidateIf(
     (o) =>
@@ -55,5 +75,5 @@ export class UpdateProfileDto {
   )
   @IsUrl({}, { message: 'Instagram deve ser uma URL válida' })
   @MaxLength(255)
-  instagram?: string;
+  instagram?: string | null;
 }
