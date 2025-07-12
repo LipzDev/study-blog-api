@@ -8,7 +8,27 @@ import { Repository } from 'typeorm';
 import { Post } from './entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { User, UserRole } from '../users/entities/user.entity';
+import { User, UserRole, UserProvider } from '../users/entities/user.entity';
+
+export type PublicAuthor = {
+  id: string;
+  email: string;
+  name: string;
+  provider: UserProvider;
+  providerId?: string;
+  avatar?: string;
+  bio?: string;
+  github?: string;
+  linkedin?: string;
+  twitter?: string;
+  instagram?: string;
+  emailVerified: boolean;
+  role: UserRole;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type PublicPost = Omit<Post, 'author'> & { author: PublicAuthor | null };
 
 @Injectable()
 export class PostsService {
@@ -37,6 +57,25 @@ export class PostsService {
     });
   }
 
+  // Função utilitária para remover campos sensíveis do usuário
+  private removeSensitiveUserFields(user: User): PublicAuthor {
+    // Remover campos sensíveis sem declarar variáveis não usadas
+    const {
+      password,
+      emailVerificationToken,
+      resetPasswordToken,
+      resetPasswordExpires,
+      posts,
+      ...safeUser
+    } = user;
+    void password;
+    void emailVerificationToken;
+    void resetPasswordToken;
+    void resetPasswordExpires;
+    void posts;
+    return safeUser as PublicAuthor;
+  }
+
   async findPaginated(
     page: number = 1,
     limit: number = 12,
@@ -44,7 +83,7 @@ export class PostsService {
     startDate?: string,
     endDate?: string,
     authorId?: string,
-  ): Promise<{ posts: Post[]; total: number }> {
+  ): Promise<{ posts: PublicPost[]; total: number }> {
     // Validação e sanitização de parâmetros
     const sanitizedPage = Math.max(1, page);
     const sanitizedLimit = Math.min(Math.max(1, limit), 100); // Máximo 100 itens
@@ -132,7 +171,7 @@ export class PostsService {
           queryBuilder.andWhere('post.date >= :startDate', {
             startDate: startDateTime,
           });
-        } catch (error) {
+        } catch {
           // Ignora data inválida silenciosamente
         }
       }
@@ -144,7 +183,7 @@ export class PostsService {
           queryBuilder.andWhere('post.date <= :endDate', {
             endDate: endDateTime,
           });
-        } catch (error) {
+        } catch {
           // Ignora data inválida silenciosamente
         }
       }
@@ -164,7 +203,15 @@ export class PostsService {
 
     const [posts, total] = await queryBuilder.getManyAndCount();
 
-    return { posts, total };
+    const safePosts: PublicPost[] = posts.map((post) => {
+      if (!post.author) return { ...post, author: null };
+      return {
+        ...post,
+        author: this.removeSensitiveUserFields(post.author),
+      };
+    });
+
+    return { posts: safePosts, total };
   }
 
   // Método auxiliar para validar datas
@@ -184,7 +231,7 @@ export class PostsService {
     return post;
   }
 
-  async findBySlug(slug: string): Promise<any> {
+  async findBySlug(slug: string): Promise<PublicPost> {
     const post = await this.postRepository.findOne({
       where: { slug },
       relations: ['author'],
@@ -192,29 +239,14 @@ export class PostsService {
     if (!post) {
       throw new NotFoundException(`Post with slug ${slug} not found`);
     }
-    // Monta author seguro
-    const safeAuthor = post.author
-      ? {
-          id: post.author.id,
-          name: post.author.name,
-          email: post.author.email,
-          avatar: post.author.avatar,
-          bio: post.author.bio,
-          github: post.author.github,
-          linkedin: post.author.linkedin,
-          twitter: post.author.twitter,
-          instagram: post.author.instagram,
-          role: post.author.role,
-          createdAt: post.author.createdAt,
-          updatedAt: post.author.updatedAt,
-        }
-      : null;
-    // Garante compatibilidade de image
+    let safeAuthor: PublicAuthor | null = null;
+    if (post.author) {
+      safeAuthor = this.removeSensitiveUserFields(post.author);
+    }
     return {
       ...post,
       author: safeAuthor,
-      createdAt: post.date,
-      image: post.image || post.imagePath || null,
+      image: post.image || post.imagePath || '',
     };
   }
 
