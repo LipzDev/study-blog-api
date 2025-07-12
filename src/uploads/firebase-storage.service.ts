@@ -1,8 +1,16 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { initializeApp, cert, App, AppOptions } from 'firebase-admin/app';
+import {
+  initializeApp,
+  cert,
+  App,
+  AppOptions,
+  getApps,
+  getApp,
+} from 'firebase-admin/app';
 import { getStorage, Storage } from 'firebase-admin/storage';
 import { v4 as uuidv4 } from 'uuid';
 import type { Bucket, File } from '@google-cloud/storage';
+import type { ServiceAccount } from 'firebase-admin';
 
 @Injectable()
 export class FirebaseStorageService {
@@ -12,33 +20,56 @@ export class FirebaseStorageService {
 
   constructor() {
     const bucketName = process.env.FIREBASE_STORAGE_BUCKET;
-    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+
+    // Checagem dos campos obrigatórios do service account
+    const requiredVars = [
+      'FIREBASE_PROJECT_ID',
+      'FIREBASE_CLIENT_EMAIL',
+      'FIREBASE_PRIVATE_KEY',
+    ];
+    for (const varName of requiredVars) {
+      if (!process.env[varName]) {
+        throw new InternalServerErrorException(
+          `Variável de ambiente do Firebase faltando: ${varName}`,
+        );
+      }
+    }
+
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY!;
+    // Montar o objeto de credenciais com todos os campos
+    const serviceAccount: ServiceAccount & Record<string, string | undefined> =
+      {
+        type: process.env.FIREBASE_TYPE ?? 'service_account',
+        projectId: process.env.FIREBASE_PROJECT_ID!,
+        privateKeyId: process.env.FIREBASE_PRIVATE_KEY_ID,
+        privateKey: privateKey.replace(/\\n/g, '\n'),
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+        clientId: process.env.FIREBASE_CLIENT_ID,
+        authUri: process.env.FIREBASE_AUTH_URI,
+        tokenUri: process.env.FIREBASE_TOKEN_URI,
+        authProviderX509CertUrl:
+          process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
+        clientC509CertUrl: process.env.FIREBASE_CLIENT_X509_CERT_URL,
+        universeDomain: process.env.FIREBASE_UNIVERSE_DOMAIN,
+      };
+
     if (!bucketName) {
       throw new InternalServerErrorException(
         'FIREBASE_STORAGE_BUCKET não configurado',
       );
     }
-    if (!serviceAccountJson) {
-      throw new InternalServerErrorException(
-        'FIREBASE_SERVICE_ACCOUNT_JSON não configurado',
-      );
-    }
-    let serviceAccount: Record<string, unknown>;
-    try {
-      serviceAccount = JSON.parse(serviceAccountJson) as Record<
-        string,
-        unknown
-      >;
-    } catch {
-      throw new InternalServerErrorException(
-        'FIREBASE_SERVICE_ACCOUNT_JSON inválido',
-      );
-    }
+
     const options: AppOptions = {
       credential: cert(serviceAccount),
       storageBucket: bucketName,
     };
-    this.firebaseApp = initializeApp(options);
+    let firebaseApp: App;
+    if (getApps().length === 0) {
+      firebaseApp = initializeApp(options);
+    } else {
+      firebaseApp = getApp();
+    }
+    this.firebaseApp = firebaseApp;
     this.storage = getStorage(this.firebaseApp);
     this.bucket = this.storage.bucket() as unknown as Bucket;
   }

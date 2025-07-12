@@ -9,6 +9,7 @@ import { Post } from './entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { User, UserRole, UserProvider } from '../users/entities/user.entity';
+import { OmitType } from '@nestjs/swagger';
 
 export type PublicAuthor = {
   id: string;
@@ -44,9 +45,23 @@ export class PostsService {
     return await this.postRepository.save(post);
   }
 
-  async findAll(): Promise<Post[]> {
-    return await this.postRepository.find({
+  async findAll(): Promise<PublicPost[]> {
+    const posts = await this.postRepository.find({
       order: { date: 'DESC' },
+      relations: ['author'],
+    });
+    return posts.map((post) => {
+      let safeAuthor: PublicAuthor | null = null;
+      if (post.author) {
+        safeAuthor = this.removeSensitiveUserFields(post.author);
+      }
+      const { date, ...rest } = post;
+      return {
+        ...rest,
+        date,
+        createdAt: date,
+        author: safeAuthor,
+      } as PublicPost & { createdAt: Date };
     });
   }
 
@@ -83,7 +98,7 @@ export class PostsService {
     startDate?: string,
     endDate?: string,
     authorId?: string,
-  ): Promise<{ posts: PublicPost[]; total: number }> {
+  ): Promise<{ posts: (PublicPost & { createdAt: Date })[]; total: number }> {
     // Validação e sanitização de parâmetros
     const sanitizedPage = Math.max(1, page);
     const sanitizedLimit = Math.min(Math.max(1, limit), 100); // Máximo 100 itens
@@ -203,10 +218,13 @@ export class PostsService {
 
     const [posts, total] = await queryBuilder.getManyAndCount();
 
-    const safePosts: PublicPost[] = posts.map((post) => {
-      if (!post.author) return { ...post, author: null };
+    const safePosts = posts.map((post) => {
+      const { date, ...rest } = post;
+      if (!post.author) return { ...rest, date, createdAt: date, author: null };
       return {
-        ...post,
+        ...rest,
+        date,
+        createdAt: date,
         author: this.removeSensitiveUserFields(post.author),
       };
     });
@@ -223,15 +241,28 @@ export class PostsService {
     return date instanceof Date && !isNaN(date.getTime());
   }
 
-  async findOne(id: string): Promise<Post> {
-    const post = await this.postRepository.findOne({ where: { id } });
+  async findOne(id: string): Promise<PublicPost & { createdAt: Date }> {
+    const post = await this.postRepository.findOne({
+      where: { id },
+      relations: ['author'],
+    });
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
-    return post;
+    let safeAuthor: PublicAuthor | null = null;
+    if (post.author) {
+      safeAuthor = this.removeSensitiveUserFields(post.author);
+    }
+    const { date, ...rest } = post;
+    return {
+      ...rest,
+      date,
+      createdAt: date,
+      author: safeAuthor,
+    };
   }
 
-  async findBySlug(slug: string): Promise<PublicPost> {
+  async findBySlug(slug: string): Promise<PublicPost & { createdAt: Date }> {
     const post = await this.postRepository.findOne({
       where: { slug },
       relations: ['author'],
@@ -243,22 +274,52 @@ export class PostsService {
     if (post.author) {
       safeAuthor = this.removeSensitiveUserFields(post.author);
     }
+    const { date, ...rest } = post;
     return {
-      ...post,
+      ...rest,
+      date,
+      createdAt: date,
       author: safeAuthor,
       image: post.image || post.imagePath || '',
     };
   }
 
-  async update(id: string, updatePostDto: UpdatePostDto): Promise<Post> {
-    const post = await this.findOne(id);
+  async update(
+    id: string,
+    updatePostDto: UpdatePostDto,
+  ): Promise<PublicPost & { createdAt: Date }> {
+    // Buscar o post como Post, não PublicPost
+    const post = await this.postRepository.findOne({
+      where: { id },
+      relations: ['author'],
+    });
+    if (!post) {
+      throw new NotFoundException(`Post with ID ${id} not found`);
+    }
     Object.assign(post, updatePostDto);
-    return await this.postRepository.save(post);
+    const updated = await this.postRepository.save(post);
+    let safeAuthor: PublicAuthor | null = null;
+    if (updated.author) {
+      safeAuthor = this.removeSensitiveUserFields(updated.author);
+    }
+    const { date, ...rest } = updated;
+    return {
+      ...rest,
+      date,
+      createdAt: date,
+      author: safeAuthor,
+    };
   }
 
   async remove(id: string, user: User): Promise<{ message: string }> {
-    const post = await this.findOne(id);
-
+    // Buscar o post como Post, não PublicPost
+    const post = await this.postRepository.findOne({
+      where: { id },
+      relations: ['author'],
+    });
+    if (!post) {
+      throw new NotFoundException(`Post with ID ${id} not found`);
+    }
     // Verificar permissões
     const canDelete = this.canUserDeletePost(user, post);
     if (!canDelete) {
@@ -266,7 +327,6 @@ export class PostsService {
         'Você não tem permissão para excluir esta postagem',
       );
     }
-
     await this.postRepository.remove(post);
     return { message: 'Postagem excluída com sucesso' };
   }

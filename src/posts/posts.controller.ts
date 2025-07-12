@@ -11,6 +11,8 @@ import {
   DefaultValuePipe,
   UseGuards,
   Request,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -29,16 +31,22 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { JwtAuthRequest } from '../types/auth.types';
+import { FirebaseStorageService } from '../uploads/firebase-storage.service';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Posts')
 @Controller('posts')
 export class PostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(
+    private readonly postsService: PostsService,
+    private readonly firebaseStorageService: FirebaseStorageService,
+  ) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Post()
   @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('image'))
   @ApiOperation({
     summary: 'Criar uma nova postagem',
     description:
@@ -125,11 +133,24 @@ export class PostsController {
       },
     },
   })
-  create(@Body() createPostDto: CreatePostDto, @Request() req: JwtAuthRequest) {
-    return this.postsService.create({
-      ...createPostDto,
-      authorId: req.user.id,
-    });
+  create(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() createPostDto: CreatePostDto,
+    @Request() req: JwtAuthRequest,
+  ) {
+    return (async () => {
+      if (file) {
+        const imageUrl = await this.firebaseStorageService.uploadImage(
+          file,
+          'posts',
+        );
+        createPostDto.image = imageUrl;
+      }
+      return this.postsService.create({
+        ...createPostDto,
+        authorId: req.user.id,
+      });
+    })();
   }
 
   @Get()
@@ -227,6 +248,7 @@ export class PostsController {
   @Roles(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Patch(':id')
   @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('image'))
   @ApiOperation({
     summary: 'Atualizar uma postagem',
     description:
@@ -337,8 +359,21 @@ export class PostsController {
       },
     },
   })
-  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
-    return this.postsService.update(id, updatePostDto);
+  update(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() updatePostDto: UpdatePostDto,
+  ) {
+    return (async () => {
+      if (file) {
+        const imageUrl = await this.firebaseStorageService.uploadImage(
+          file,
+          'posts',
+        );
+        updatePostDto.image = imageUrl;
+      }
+      return this.postsService.update(id, updatePostDto);
+    })();
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

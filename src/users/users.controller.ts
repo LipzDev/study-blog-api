@@ -10,6 +10,8 @@ import {
   Request,
   UseGuards,
   Body,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -26,11 +28,17 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { JwtAuthRequest } from '../types/auth.types';
+import { FirebaseStorageService } from '../uploads/firebase-storage.service';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadsModule } from '../uploads/uploads.module';
 
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly firebaseStorageService: FirebaseStorageService,
+  ) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -587,5 +595,23 @@ export class UsersController {
     @Request() req,
   ) {
     return this.usersService.updateUserName(id, body.name, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Patch('avatar')
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('avatar'))
+  @ApiOperation({ summary: 'Atualizar avatar do usuário autenticado' })
+  async updateAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: JwtAuthRequest,
+  ) {
+    if (!file) throw new BadRequestException('Arquivo não enviado');
+    const imageUrl = await this.firebaseStorageService.uploadImage(
+      file,
+      'avatars',
+    );
+    return this.usersService.updateAvatar(req.user.id, imageUrl);
   }
 }
