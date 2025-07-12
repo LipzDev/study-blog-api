@@ -78,5 +78,10 @@ async function bootstrap() {
     `,
     customSiteTitle: 'Study Blog API',
   });
+
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
+  console.log(`Servidor rodando na porta ${port}`);
 }
+
 void bootstrap();
