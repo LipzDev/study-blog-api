@@ -1,42 +1,41 @@
 import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  Request,
-  Get,
-  Query,
-  Delete,
   BadRequestException,
-  UnauthorizedException,
+  Body,
+  Controller,
+  Delete,
+  Get,
   Patch,
-  UseInterceptors,
+  Post,
+  Query,
+  Request,
+  UnauthorizedException,
   UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
   ApiBody,
   ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service';
-import { LocalAuthGuard } from './guards/local-auth.guard';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RolesGuard } from './guards/roles.guard';
-import { Roles } from './decorators/roles.decorator';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
-import { User, UserRole } from '../users/entities/user.entity';
 import { JwtAuthRequest } from '../types/auth.types';
-import { UserProfileDto } from './dto/user-profile.dto';
+import { FirebaseStorageService } from '../uploads/firebase-storage.service';
+import { User, UserRole } from '../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
+import { AuthService } from './auth.service';
+import { Roles } from './decorators/roles.decorator';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UserProfileDto } from './dto/user-profile.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { LocalAuthGuard } from './guards/local-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 
 // Interfaces para tipagem adequada
 interface AuthenticatedRequest {
@@ -50,6 +49,7 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private usersService: UsersService,
+    private firebaseStorageService: FirebaseStorageService, // novo
   ) {}
 
   @Post('register')
@@ -245,16 +245,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Token JWT inválido ou expirado' })
   @UseInterceptors(
     FileInterceptor('avatar', {
-      storage: diskStorage({
-        destination: './temp/images',
-        filename: (req, file, cb) => {
-          const timestamp = Date.now();
-          const randomString = Math.random().toString(36).substring(2, 15);
-          const extension = extname(file.originalname);
-          const filename = `avatar-${timestamp}-${randomString}${extension}`;
-          cb(null, filename);
-        },
-      }),
+      storage: undefined, // buffer em memória
       fileFilter: (req, file, cb) => {
         if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
           return cb(
@@ -278,10 +269,10 @@ export class AuthController {
     if (!avatar) {
       throw new BadRequestException('Arquivo de avatar é obrigatório');
     }
-
-    // Gerar URL do avatar
-    const avatarUrl = `/temp/images/${avatar.filename}`;
-
+    const avatarUrl = await this.firebaseStorageService.uploadImage(
+      avatar,
+      'avatars',
+    );
     return this.usersService.updateAvatar(req.user.id, avatarUrl);
   }
 }

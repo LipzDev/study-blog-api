@@ -1,13 +1,10 @@
 import { Module } from '@nestjs/common';
-import { MulterModule } from '@nestjs/platform-express';
 import { UploadsController } from './uploads.controller';
+import { FirebaseStorageService } from './firebase-storage.service';
 
 @Module({
-  imports: [
-    MulterModule.register({
-      dest: './temp',
-    }),
-  ],
   controllers: [UploadsController],
+  providers: [FirebaseStorageService],
+  exports: [FirebaseStorageService],
 })
 export class UploadsModule {}

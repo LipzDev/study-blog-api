@@ -13,13 +13,16 @@ import {
   ApiConsumes,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { FirebaseStorageService } from './firebase-storage.service';
 
 @ApiTags('Uploads')
 @Controller('uploads')
 export class UploadsController {
+  constructor(
+    private readonly firebaseStorageService: FirebaseStorageService,
+  ) {}
+
   @UseGuards(JwtAuthGuard)
   @Post('image')
   @ApiBearerAuth()
@@ -27,15 +30,7 @@ export class UploadsController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './temp/images',
-        filename: (req, file, callback) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          callback(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-        },
-      }),
+      storage: undefined, // Usar buffer em memória
       fileFilter: (req, file, callback) => {
         if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
           return callback(
@@ -52,17 +47,14 @@ export class UploadsController {
       },
     }),
   )
-  uploadImage(@UploadedFile() file: Express.Multer.File) {
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('Nenhum arquivo foi enviado');
     }
-
+    const url = await this.firebaseStorageService.uploadImage(file, 'posts');
     return {
       message: 'Imagem enviada com sucesso',
-      filename: file.filename,
-      originalName: file.originalname,
-      size: file.size,
-      url: `/temp/images/${file.filename}`,
+      url,
     };
   }
 }

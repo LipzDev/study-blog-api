@@ -10,6 +10,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { RolesGuard } from './guards/roles.guard';
+import { FirebaseStorageService } from '../uploads/firebase-storage.service';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { RolesGuard } from './guards/roles.guard';
     JwtStrategy,
     GoogleStrategy,
     RolesGuard,
+    FirebaseStorageService,
   ],
   exports: [AuthService, RolesGuard],
 })
