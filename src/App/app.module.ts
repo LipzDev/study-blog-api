@@ -26,6 +26,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       database: process.env.DB_DATABASE,
       autoLoadEntities: true,
       synchronize: process.env.NODE_ENV !== 'production',
+      migrations: [__dirname + '/../migration/*.{ts,js}'],
+      migrationsRun: true,
     }),
     PostsModule,
     AuthModule,
