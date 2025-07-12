@@ -44,7 +44,7 @@ interface AuthenticatedRequest {
   body: LoginDto;
 }
 
-@ApiTags('Authentication')
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
