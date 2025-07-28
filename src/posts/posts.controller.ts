@@ -197,7 +197,7 @@ export class PostsController {
   @ApiOperation({
     summary: 'Buscar postagens com paginação e filtros',
     description:
-      'Retorna postagens paginadas com opções de filtro por texto e data',
+      'Retorna postagens paginadas com opções de filtro por texto e data.',
   })
   @ApiQuery({
     name: 'page',

@@ -19,6 +19,19 @@ export class PostAuthorDto {
   })
   email: string;
 
+  @ApiProperty({
+    description: 'Provedor de autenticação do usuário',
+    example: 'local',
+    enum: ['local', 'google'],
+  })
+  provider: string;
+
+  @ApiPropertyOptional({
+    description: 'ID do provedor de autenticação (se aplicável)',
+    example: 'google_123456789',
+  })
+  providerId?: string;
+
   @ApiPropertyOptional({
     description: 'URL do avatar do autor',
     example: 'https://example.com/avatar.jpg',
@@ -54,6 +67,31 @@ export class PostAuthorDto {
     example: 'https://instagram.com/joaosilva',
   })
   instagram?: string;
+
+  @ApiProperty({
+    description: 'Status de verificação do email',
+    example: true,
+  })
+  emailVerified: boolean;
+
+  @ApiProperty({
+    description: 'Role/perfil do usuário no sistema',
+    example: 'user',
+    enum: ['user', 'admin', 'super_admin'],
+  })
+  role: string;
+
+  @ApiProperty({
+    description: 'Data de criação da conta',
+    example: '2024-01-15T10:30:00.000Z',
+  })
+  createdAt: Date;
+
+  @ApiProperty({
+    description: 'Data da última atualização da conta',
+    example: '2024-01-15T10:30:00.000Z',
+  })
+  updatedAt: Date;
 }
 
 export class PostResponseDto {

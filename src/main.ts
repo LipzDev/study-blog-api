@@ -38,8 +38,8 @@ async function bootstrap() {
     .setTitle('Study Blog API')
     .setDescription(
       `
-      ## API do Study Blog
-     
+      ## API do Study Blog      
+      
     `,
     )
     .setVersion('2.0.0')
@@ -61,6 +61,7 @@ async function bootstrap() {
     .addTag('Comments', 'Sistema de comentários nos posts')
     .addTag('Users', 'Gerenciamento de usuários (ADMIN/SUPER_ADMIN)')
     .addTag('Uploads', 'Upload de imagens para posts')
+
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

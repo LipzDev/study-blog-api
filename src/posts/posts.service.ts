@@ -29,7 +29,9 @@ export type PublicAuthor = {
   updatedAt: Date;
 };
 
-export type PublicPost = Omit<Post, 'author'> & { author: PublicAuthor | null };
+export type PublicPost = Omit<Post, 'author' | 'authorId'> & {
+  author: PublicAuthor | null;
+};
 
 @Injectable()
 export class PostsService {
@@ -38,11 +40,36 @@ export class PostsService {
     private readonly postRepository: Repository<Post>,
   ) {}
 
-  async create(createPostDto: CreatePostDto): Promise<Post> {
+  async create(
+    createPostDto: CreatePostDto,
+  ): Promise<PublicPost & { createdAt: Date }> {
     const post = this.postRepository.create({
       ...createPostDto,
     });
-    return await this.postRepository.save(post);
+    const savedPost = await this.postRepository.save(post);
+
+    // Buscar o post com o autor para sanitizar
+    const postWithAuthor = await this.postRepository.findOne({
+      where: { id: savedPost.id },
+      relations: ['author'],
+    });
+
+    if (!postWithAuthor) {
+      throw new Error('Erro ao criar postagem');
+    }
+
+    let safeAuthor: PublicAuthor | null = null;
+    if (postWithAuthor.author) {
+      safeAuthor = this.removeSensitiveUserFields(postWithAuthor.author);
+    }
+
+    const { date, authorId, ...rest } = postWithAuthor;
+    return {
+      ...rest,
+      date,
+      createdAt: date,
+      author: safeAuthor,
+    } as PublicPost & { createdAt: Date };
   }
 
   async findAll(): Promise<PublicPost[]> {
@@ -55,7 +82,7 @@ export class PostsService {
       if (post.author) {
         safeAuthor = this.removeSensitiveUserFields(post.author);
       }
-      const { date, ...rest } = post;
+      const { date, authorId, ...rest } = post;
       return {
         ...rest,
         date,
@@ -65,10 +92,24 @@ export class PostsService {
     });
   }
 
-  async findRecent(limit: number = 5): Promise<Post[]> {
-    return await this.postRepository.find({
+  async findRecent(limit: number = 5): Promise<PublicPost[]> {
+    const posts = await this.postRepository.find({
       order: { date: 'DESC' },
       take: limit,
+      relations: ['author'],
+    });
+    return posts.map((post) => {
+      let safeAuthor: PublicAuthor | null = null;
+      if (post.author) {
+        safeAuthor = this.removeSensitiveUserFields(post.author);
+      }
+      const { date, authorId, ...rest } = post;
+      return {
+        ...rest,
+        date,
+        createdAt: date,
+        author: safeAuthor,
+      } as PublicPost & { createdAt: Date };
     });
   }
 
@@ -219,7 +260,7 @@ export class PostsService {
     const [posts, total] = await queryBuilder.getManyAndCount();
 
     const safePosts = posts.map((post) => {
-      const { date, ...rest } = post;
+      const { date, authorId, ...rest } = post;
       if (!post.author) return { ...rest, date, createdAt: date, author: null };
       return {
         ...rest,
@@ -253,7 +294,7 @@ export class PostsService {
     if (post.author) {
       safeAuthor = this.removeSensitiveUserFields(post.author);
     }
-    const { date, ...rest } = post;
+    const { date, authorId, ...rest } = post;
     return {
       ...rest,
       date,
@@ -274,7 +315,7 @@ export class PostsService {
     if (post.author) {
       safeAuthor = this.removeSensitiveUserFields(post.author);
     }
-    const { date, ...rest } = post;
+    const { date, authorId, ...rest } = post;
     return {
       ...rest,
       date,
@@ -302,7 +343,7 @@ export class PostsService {
     if (updated.author) {
       safeAuthor = this.removeSensitiveUserFields(updated.author);
     }
-    const { date, ...rest } = updated;
+    const { date, authorId, ...rest } = updated;
     return {
       ...rest,
       date,
