@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Patch,
   Post,
   Query,
@@ -20,6 +21,9 @@ import {
   ApiOperation,
   ApiResponse,
   ApiTags,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthRequest } from '../types/auth.types';
 import { FirebaseStorageService } from '../uploads/firebase-storage.service';
@@ -33,6 +37,7 @@ import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserProfileDto } from './dto/user-profile.dto';
+import { LoginResponseDto, RegisterResponseDto } from './dto/auth-response.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
@@ -53,20 +58,57 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  @ApiOperation({ summary: 'Registrar um novo usuário' })
-  @ApiResponse({ status: 201, description: 'Usuário registrado com sucesso' })
-  @ApiResponse({ status: 400, description: 'Requisição inválida' })
-  @ApiResponse({ status: 409, description: 'Usuário já existe' })
+  @ApiOperation({
+    summary: 'Registrar um novo usuário',
+    description:
+      'Cria uma nova conta de usuário. Um email de verificação será enviado para confirmar a conta.',
+  })
+  @ApiBody({
+    type: RegisterDto,
+    description: 'Dados do usuário para registro',
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description:
+      'Usuário registrado com sucesso. Verifique seu email para confirmar a conta.',
+    type: RegisterResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dados inválidos fornecidos',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Email já está em uso',
+  })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  @ApiOperation({ summary: 'Login com email e senha' })
-  @ApiBody({ type: LoginDto })
-  @ApiResponse({ status: 200, description: 'Usuário logado com sucesso' })
-  @ApiResponse({ status: 401, description: 'Credenciais inválidas' })
+  @ApiOperation({
+    summary: 'Login com email e senha',
+    description:
+      'Autentica um usuário com email e senha, retornando um token JWT para acesso aos endpoints protegidos.',
+  })
+  @ApiBody({
+    type: LoginDto,
+    description: 'Credenciais de login',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Login realizado com sucesso',
+    type: LoginResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Credenciais inválidas',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dados inválidos fornecidos',
+  })
   async login(@Request() req: AuthenticatedRequest) {
     return this.authService.login(req.body);
   }
@@ -162,9 +204,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @ApiOperation({
-    summary: 'Manual cleanup of unverified users (Super Admin only)',
+    summary: 'Limpeza manual de usuários não verificados (somente Super Admin)',
     description:
-      'Removes users who registered more than 24 hours ago but never verified their email. Only accessible by SUPER_ADMIN.',
+      'Remove usuários que se registraram há mais de 24 horas, mas nunca verificaram o e-mail. Acessível somente por SUPER_ADMIN.',
   })
   @ApiResponse({
     status: 200,

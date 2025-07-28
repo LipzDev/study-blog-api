@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Post } from '../../posts/entities/post.entity';
+import { Comment } from '../../comments/entities/comment.entity';
 
 export enum UserProvider {
   LOCAL = 'local',
@@ -93,4 +94,7 @@ export class User {
 
   @OneToMany(() => Post, (post) => post.author)
   posts: Post[];
+
+  @OneToMany(() => Comment, (comment) => comment.author)
+  comments: Comment[];
 }

@@ -13,6 +13,7 @@ import {
   Request,
   UploadedFile,
   UseInterceptors,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,10 +23,12 @@ import {
   ApiBody,
   ApiParam,
   ApiQuery,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { PostResponseDto, PostListResponseDto } from './dto/post-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -154,13 +157,36 @@ export class PostsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all posts' })
-  @ApiResponse({ status: 200, description: 'Posts retrieved successfully' })
+  @ApiOperation({
+    summary: 'Listar todas as postagens',
+    description: 'Retorna todas as postagens disponíveis no sistema.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lista de postagens retornada com sucesso',
+    type: [PostResponseDto],
+  })
   findAll() {
     return this.postsService.findAll();
   }
 
   @Get('recent')
+  @ApiOperation({
+    summary: 'Buscar postagens recentes',
+    description: 'Retorna as postagens mais recentes do sistema.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Número de postagens recentes a retornar',
+    example: 5,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Postagens recentes retornadas com sucesso',
+    type: [PostResponseDto],
+  })
   findRecent(
     @Query('limit', new DefaultValuePipe(5), ParseIntPipe) limit: number,
   ) {
@@ -216,6 +242,11 @@ export class PostsController {
       'ID do autor para filtrar postagens (usado na rota /admin para usuários não-admin)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Postagens paginadas retornadas com sucesso',
+    type: PostListResponseDto,
+  })
   findPaginated(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
@@ -235,11 +266,47 @@ export class PostsController {
   }
 
   @Get('slug/:slug')
+  @ApiOperation({
+    summary: 'Buscar postagem por slug',
+    description: 'Retorna uma postagem específica usando seu slug único.',
+  })
+  @ApiParam({
+    name: 'slug',
+    description: 'Slug único da postagem',
+    example: 'minha-primeira-postagem',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Postagem encontrada com sucesso',
+    type: PostResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Postagem não encontrada',
+  })
   findBySlug(@Param('slug') slug: string) {
     return this.postsService.findBySlug(slug);
   }
 
   @Get(':id')
+  @ApiOperation({
+    summary: 'Buscar postagem por ID',
+    description: 'Retorna uma postagem específica usando seu ID único.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID único da postagem',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Postagem encontrada com sucesso',
+    type: PostResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Postagem não encontrada',
+  })
   findOne(@Param('id') id: string) {
     return this.postsService.findOne(id);
   }

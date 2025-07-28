@@ -5,9 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { Comment } from '../../comments/entities/comment.entity';
 
 @Entity('posts')
 export class Post {
@@ -41,4 +43,7 @@ export class Post {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => Comment, (comment) => comment.post)
+  comments: Comment[];
 }
