@@ -668,32 +668,27 @@ export class UsersService {
 
     // Validação das redes sociais
     if (profileData.github !== undefined) {
-      const githubValue = profileData.github ? profileData.github.trim() : null;
-      updateData.github = githubValue || null;
+      updateData.github = profileData.github;
+      this.logger.debug(`Updating github: ${profileData.github}`);
     }
 
     if (profileData.linkedin !== undefined) {
-      const linkedinValue = profileData.linkedin
-        ? profileData.linkedin.trim()
-        : null;
-      updateData.linkedin = linkedinValue || null;
+      updateData.linkedin = profileData.linkedin;
+      this.logger.debug(`Updating linkedin: ${profileData.linkedin}`);
     }
 
     if (profileData.twitter !== undefined) {
-      const twitterValue = profileData.twitter
-        ? profileData.twitter.trim()
-        : null;
-      updateData.twitter = twitterValue || null;
+      updateData.twitter = profileData.twitter;
+      this.logger.debug(`Updating twitter: ${profileData.twitter}`);
     }
 
     if (profileData.instagram !== undefined) {
-      const instagramValue = profileData.instagram
-        ? profileData.instagram.trim()
-        : null;
-      updateData.instagram = instagramValue || null;
+      updateData.instagram = profileData.instagram;
+      this.logger.debug(`Updating instagram: ${profileData.instagram}`);
     }
 
     // Atualizar usuário
+    this.logger.debug(`Updating user ${userId} with data:`, updateData);
     await this.userRepository.update(userId, updateData);
 
     // Retornar dados atualizados
@@ -701,6 +696,13 @@ export class UsersService {
     if (!updatedUser) {
       throw new NotFoundException('Erro ao atualizar perfil');
     }
+
+    this.logger.debug(`Updated user data:`, {
+      github: updatedUser.github,
+      linkedin: updatedUser.linkedin,
+      twitter: updatedUser.twitter,
+      instagram: updatedUser.instagram,
+    });
 
     return {
       message: 'Perfil atualizado com sucesso',
