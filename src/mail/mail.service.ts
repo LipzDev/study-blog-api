@@ -83,6 +83,12 @@ export class MailService {
       this.configService.get<string>('ENABLE_REAL_EMAILS') === 'true';
     const shouldSendRealEmail = !isDevelopment || enableRealEmails;
 
+    this.logger.log(
+      `[PASSWORD_RESET] Configurações: NODE_ENV=${isDevelopment ? 'development' : 'production'}, ENABLE_REAL_EMAILS=${enableRealEmails}, shouldSendRealEmail=${shouldSendRealEmail}`,
+    );
+    this.logger.log(`[PASSWORD_RESET] Tentando enviar email para: ${email}`);
+    this.logger.log(`[PASSWORD_RESET] Reset URL: ${resetUrl}`);
+
     const mailOptions = {
       from: this.configService.get<string>(
         'MAIL_FROM',
@@ -110,8 +116,11 @@ export class MailService {
 
     try {
       if (shouldSendRealEmail) {
+        this.logger.log(`[PASSWORD_RESET] Enviando email real para: ${email}`);
         await this.transporter.sendMail(mailOptions);
-        this.logger.log(`Password reset email sent to ${email}`);
+        this.logger.log(
+          `[PASSWORD_RESET] Email enviado com sucesso para ${email}`,
+        );
       } else {
         // Em desenvolvimento sem emails reais, apenas logar
         this.logger.log(
@@ -122,7 +131,7 @@ export class MailService {
       }
     } catch (error) {
       this.logger.error(
-        `Failed to send password reset email to ${email}`,
+        `[PASSWORD_RESET] Erro ao enviar email para ${email}:`,
         error,
       );
       // Em desenvolvimento, não falhar por causa do email

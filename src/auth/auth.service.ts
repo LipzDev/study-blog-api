@@ -140,20 +140,45 @@ export class AuthService {
     forgotPasswordDto: ForgotPasswordDto,
   ): Promise<{ message: string }> {
     const user = await this.usersService.findByEmail(forgotPasswordDto.email);
+
     if (!user) {
+      // Log para debug
+      console.log(
+        `[FORGOT_PASSWORD] Email não encontrado: ${forgotPasswordDto.email}`,
+      );
+
       // Por segurança, não revelamos se o email existe ou não
       return {
-        message: 'Um link de redefinição foi enviado.',
+        message:
+          'Se este email estiver cadastrado em nossa base, você receberá um link de redefinição.',
       };
     }
+
+    console.log(
+      `[FORGOT_PASSWORD] Usuário encontrado: ${user.email}, enviando email...`,
+    );
 
     const resetToken = await this.usersService.updateResetPasswordToken(
       user.id,
     );
-    await this.mailService.sendPasswordResetEmail(user.email, resetToken);
+
+    try {
+      await this.mailService.sendPasswordResetEmail(user.email, resetToken);
+      console.log(
+        `[FORGOT_PASSWORD] Email enviado com sucesso para: ${user.email}`,
+      );
+    } catch (error) {
+      console.error(
+        `[FORGOT_PASSWORD] Erro ao enviar email para ${user.email}:`,
+        error,
+      );
+      throw new Error(
+        'Erro ao enviar email de recuperação. Tente novamente mais tarde.',
+      );
+    }
 
     return {
-      message: 'Um link de redefinição foi enviado.',
+      message: 'Um link de redefinição foi enviado para seu email.',
     };
   }
 

@@ -21,9 +21,6 @@ import {
   ApiOperation,
   ApiResponse,
   ApiTags,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthRequest } from '../types/auth.types';
 import { FirebaseStorageService } from '../uploads/firebase-storage.service';
